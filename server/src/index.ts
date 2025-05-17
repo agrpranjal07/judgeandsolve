@@ -3,10 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { sequelize } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import authRoutes from './routes/auth.js';
-import problemRoutes from './routes/problems.js';
-import submissionRoutes from './routes/submissions.js';
-import statsRoutes from './routes/stats.js';
+import passport from 'passport';
+import authRouter from './routes/auth.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -15,15 +13,19 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors(
+  {
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  }
+));
 app.use(express.json());
 
-// Routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/problems', problemRoutes);
-app.use('/api/v1/submissions', submissionRoutes);
-app.use('/api/v1/stats', statsRoutes);
+// Passport middleware
+app.use(passport.initialize());
 
+// Routes
+app.use('/api/v1/auth', authRouter);
 // Error handling
 app.use(errorHandler);
 
