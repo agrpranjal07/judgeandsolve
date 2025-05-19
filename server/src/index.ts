@@ -1,53 +1,61 @@
+import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { sequelize } from './config/database.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import './middleware/passport.js';
 import passport from 'passport';
-import authRouter from './routes/auth.routes.js';
 
-// Load environment variables
+import { sequelize } from './config/database.js';
+import authRouter from './routes/auth.routes.js';
+import { ApiError } from './utils/ApiError.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import cookieParser from 'cookie-parser';
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors(
-  {
-    origin: process.env.CLIENT_URL,
-    credentials: true,
-  }
+  { origin: process.env.CLIENT_URL, credentials: true }
 ));
 app.use(express.json());
-
-// Passport middleware
 app.use(passport.initialize());
 
-// Routes
+// API Routes
 app.use('/api/v1/auth', authRouter);
-// Error handling
+
+// Health / Welcome
+app.get('/api/v1', (req, res) => {
+  res.send('Welcome to the API of JudgeAndSolve');
+});
+
+// 404 handler
+app.use((req, res, next) => {
+  next(new ApiError(404, `Route ${req.method} ${req.originalUrl} not found`));
+});
+
+// Global error handler
 app.use(errorHandler);
 
-// Database connection and server start
+// Start server
 const startServer = async () => {
   try {
     await sequelize.authenticate();
-    console.log('Database connection has been established successfully.');
-    
-    // Sync database (in development)
+    console.log('Database connected.');
     if (process.env.NODE_ENV === 'development') {
       await sequelize.sync({ alter: true });
-      console.log('Database synced successfully');
+      console.log('Database synced.');
     }
-
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`Server listening on port ${PORT}`);
     });
-  } catch (error) {
-    console.error('Unable to start server:', error);
+  } catch (err) {
+    console.error('Startup error:', err);
     process.exit(1);
   }
 };
+startServer();
 
-startServer(); 

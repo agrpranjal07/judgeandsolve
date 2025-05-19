@@ -1,157 +1,159 @@
 import { Request, Response } from 'express';
-import { z } from 'zod';
-import  User  from '../models/user.model.js'; // Adjust the import path as necessary
-import Token from '../models/token.model.js'; // Import the Token model
+import { z, ZodError } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// Zod schema for signup input validation
-const signupSchema = z.object({
-  username: z.string().min(3).max(30),
-  email: z.string().email(),
-  password: z.string().min(8),
-});
+import User from '../models/user.model.js';
+import Token from '../models/token.model.js';
 
+import { throwIf, handleZodError, sendSuccess } from '../utils/helper.js';
+import { ApiError } from '../utils/ApiError.js';
+
+const REFRESH_EXPIRY_MS = Number(process.env.TOKEN_EXPIRY) || 7 * 24 * 60 * 60 * 1000;
+
+const signupSchema = z.object({
+  username: z.string().min(3, 'Username must be at least 3 chars'),
+  email: z.string().email('Invalid email'),
+  password: z.string().min(8, 'Password must be at least 8 chars'),
+});
 type SignupInput = z.infer<typeof signupSchema>;
 
-export const signup = async (req: Request, res: Response): Promise<void> => {
+const loginSchema = z.object({
+  email: z.string().email('Invalid email'),
+  password: z.string().min(1, 'Password required'),
+});
+type LoginInput = z.infer<typeof loginSchema>;
+
+export const signup = async (req: Request, res: Response) => {
+  let input: SignupInput;
   try {
-    // 1. Validate input with Zod
-    const validatedInput: SignupInput = signupSchema.parse(req.body);
-    const { username, email, password } = validatedInput;
-
-    // 2. Check for existing user
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      res.status(400).json({ message: 'User with this email already exists' });
-      return;
-    }
-
-    // 3. Create a new user
-    const newUser = await User.create({
-      username,
-      email,
-      password,
-      usertype: 'User', // Add the usertype here
-    });
-
-    // 4. Return a success response
-    res.status(201).json({ message: 'User created successfully', userId: newUser.id });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ message: 'Invalid input', errors: error.errors });
-    } else {
-      console.error('Error in signup:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
+    input = signupSchema.parse(req.body);
+  } catch (err) {
+    if (err instanceof ZodError) return handleZodError(err);
+    throw err;
   }
+
+  const { username, email, password } = input;
+  const existing = await User.findOne({ where: { email } });
+  throwIf(existing !== null, 409, 'Email already in use');
+
+  const newUser = await User.create({ username, email, password, usertype: 'User' });
+  return sendSuccess(res, 201, 'User created successfully', { id: newUser.id });
 };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
-  // Zod schema for login input validation
-  const loginSchema = z.object({
-    email: z.string().email(),
-    password: z.string(),
+export const login = async (req: Request, res: Response) => {
+  let input: LoginInput;
+  try {
+    input = loginSchema.parse(req.body);
+  } catch (err) {
+    if (err instanceof ZodError) return handleZodError(err);
+    throw err;
+  }
+
+  const { email, password } = input;
+  const user = await User.findOne({ where: { email } });
+  throwIf(!user, 401, 'Invalid credentials');
+
+  const valid = await bcrypt.compare(password, user?.password || '');
+  throwIf(!valid, 401, 'Invalid credentials');
+
+  const accessToken = jwt.sign(
+    { id: user?.id },
+    process.env.JWT_SECRET as string,
+    { expiresIn: '15m' }
+  );
+  const refreshToken = jwt.sign(
+    { id: user?.id },
+    process.env.REFRESH_SECRET as string,
+    { expiresIn: '7d' }
+  );
+  await Token.create({
+    userId: user?.id,
+    refreshToken,
+    userAgent: req.headers['user-agent'],
+    ipAddress: req.ip,
+    expiresAt: new Date(Date.now() + REFRESH_EXPIRY_MS),
   });
 
-  try {
-    // 1. Validate input with Zod
-    const validatedInput = loginSchema.parse(req.body);
-    const { email, password } = validatedInput;
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/api/v1/auth',
+    maxAge: REFRESH_EXPIRY_MS,
+  });
 
-    // 2. Find the user by email
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
-    }
+  return sendSuccess(res, 200, 'Logged in successfully', { accessToken });
 
-    // 3. Compare the provided password with the hashed password
-    if (!user.password) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
-    }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
-    }
-
-    // 4. Generate a JWT token (replace 'your_jwt_secret' with a strong secret from environment variables)
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: '1h' }); // e.g., '1h' for 1 hour
-
-    // 5. Respond with the JWT token
-    res.status(200).json({ token });
-  } catch (error) {
-    console.error('Error in login:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
 };
 
-export const logout = async (req: Request, res: Response): Promise<void> => {
-  const { refreshToken } = req.body;
+export const logout = async (req: Request, res: Response) => {
+  const { refreshToken } = req.cookies;
+  throwIf(!refreshToken, 400, 'Refresh token is required');
 
-  if (!refreshToken) {
-    res.status(400).json({ message: 'Refresh token is required' });
-    return;
-  }
+  const count = await Token.destroy({ where: { refreshToken } });
+  throwIf(count === 0, 404, 'Refresh token not found');
 
-  try {
-    const deletedCount = await Token.destroy({
-      where: { refreshToken: refreshToken },
-    });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/api/v1/auth',
+  });
 
-    if (deletedCount === 0) {
- res.status(404).json({ message: 'Refresh token not found' });
-    } else {
- res.status(200).json({ message: 'Logout successful' });
-    }
-  } catch (error) {
- console.error('Error during logout:', error);
- res.status(500).json({ message: 'Internal server error' });
-  }
+  return sendSuccess(res, 200, 'Logged out successfully');
 };
 
-export const getProfile = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const username = req.params.username;
+export const getProfile = async (req: Request, res: Response) => {
+  const username = req.params.username;
+  const user = await User.findOne({
+    where: { username },
+    attributes: ['id', 'username', 'usertype', 'createdAt'],
+  });
+  throwIf(!user, 404, 'User not found');
 
-    const user = await User.findOne({
-      where: { username },
-      attributes: ['id', 'username', 'usertype', 'createdAt'], // Exclude sensitive info
-    });
-
-    if (!user) {
-      res.status(404).json({ message: 'User not found' });
-      return;
-    }
-
-    res.status(200).json(user);
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
+  return sendSuccess(res, 200, 'Profile fetched', user);
 };
 
-export const getMe = async (req: Request, res: Response): Promise<void> => {
+export const getMe = async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const user = await User.findByPk(userId, {
+    attributes: ['id', 'username', 'email', 'usertype', 'createdAt'],
+  });
+  throwIf(!user, 404, 'Authenticated user not found');
+
+  return sendSuccess(res, 200, 'Profile fetched', user);
+};
+
+export const refresh = async (req: Request, res: Response) => {
+  const token = req.cookies['refreshToken'];
+  throwIf(!token, 401, 'No refresh token provided');
+
+  let payload: any;
   try {
-    // Assuming the authenticated user is attached to req.user by middleware
-    // We'll need to set up this middleware later using Passport.js JWT strategy
-    // For now, let's assume req.user contains the user object or ID
-    const userId = (req as any).user.id; // Adjust based on how user is attached
-
-    const user = await User.findByPk(userId, {
-      attributes: ['id', 'username', 'email', 'usertype', 'createdAt'], // Include email for the authenticated user's own profile
-    });
-
-    if (!user) {
-      res.status(404).json({ message: 'User not found' });
-      return;
-    }
-
-    res.status(200).json(user);
-  } catch (error) {
-    console.error('Error fetching authenticated user profile:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    payload = jwt.verify(token, process.env.REFRESH_SECRET!);
+  } catch (err) {
+    throw new ApiError(401, 'Invalid or expired refresh token');
   }
+
+  const stored: Token | null = await Token.findOne({ where: { refreshToken: token }});
+  throwIf(!stored, 401, 'Refresh token revoked');
+
+  const newAccessToken = jwt.sign({ id: payload.id }, process.env.JWT_SECRET!, { expiresIn: '15m' });
+  const newRefreshToken = jwt.sign({ id: payload.id }, process.env.REFRESH_SECRET!, { expiresIn: '7d' });
+  if(stored){
+    stored.refreshToken = newRefreshToken;
+    await stored.save();
+  }
+  const refreshExpiryMs = REFRESH_EXPIRY_MS;
+
+  res.cookie('refreshToken', newRefreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/api/v1/auth',
+    maxAge: refreshExpiryMs,
+  });
+
+  return sendSuccess(res, 200, 'Token refreshed', { accessToken: newAccessToken });
 };

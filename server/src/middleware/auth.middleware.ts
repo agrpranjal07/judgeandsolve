@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
-import '../config/passport'; // Import the passport configuration
+import './passport.js'; // Import the passport configuration
 
 export const authenticateJWT = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate('jwt', { session: false }, (err: any, user: any, info: any) => {

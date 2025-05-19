@@ -17,6 +17,7 @@ export const sequelize = new Sequelize(DATABASE_URL, {
       rejectUnauthorized: false,
     },
   },
+  logging: false,
   // logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
     max: 5,
