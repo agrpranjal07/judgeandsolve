@@ -1,13 +1,16 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Toaster } from 'react-hot-toast'
+
+import ClientLayout from '@/components/ClientLayout';
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'JudgeAndSolve - Online Judge Platform',
   description: 'Solve coding problems, improve your skills, and compete with others',
+  // You can add more metadata here
+  // icons: { icon: '/favicon.ico' },
 }
 
 export default function RootLayout({
@@ -16,11 +19,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Toaster position="top-right" />
-        {children}
+        <ClientLayout>
+            {children}
+        </ClientLayout>
       </body>
     </html>
   )
-} 
+}
