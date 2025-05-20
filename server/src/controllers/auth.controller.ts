@@ -34,8 +34,11 @@ export const signup = async (req: Request, res: Response) => {
   }
 
   const { username, email, password } = input;
-  const existing = await User.findOne({ where: { email } });
-  throwIf(existing !== null, 409, 'Email already in use');
+  const existingEmail = await User.findOne({ where: { email } });
+  throwIf(existingEmail !== null, 409, 'Email already in use');
+
+  const existingUsername = await User.findOne({ where: { username } });
+  throwIf(existingUsername !== null, 409, 'Username already in use');
 
   const newUser = await User.create({ username, email, password, usertype: 'User' });
   return sendSuccess(res, 201, 'User created successfully', { id: newUser.id });
