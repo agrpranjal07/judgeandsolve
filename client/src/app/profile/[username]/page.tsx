@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import api from '@/services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { format } from 'date-fns';
 
 interface UserProfile {
   username: string;

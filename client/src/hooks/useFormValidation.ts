@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { z } from 'zod';
+import { toast } from './use-toast';
 
 type UseFormValidation<T> = {
   formData: T;
@@ -51,10 +52,18 @@ const useFormValidation = <T>(
         setValidationErrors(error.errors);
         // You might also want to display a toast here for validation errors
         // using the useToast hook in the component that uses this hook.
+        toast({
+          title: 'Validation Error',
+          description: error.errors.map((error) => error.message).join(', '),
+        });
       } else {
         // Handle other potential errors from the submitCallback
         console.error("Submission error:", error);
         // Display a generic error toast here or let the component handle it.
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred',
+        });
       }
     } finally {
       setIsLoading(false);

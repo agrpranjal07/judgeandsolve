@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { redirect } from 'next/navigation';
-
+import useAuthStore from '@/store/auth';
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   withCredentials: true, // Needed for HttpOnly cookies (refresh token)
@@ -13,7 +13,6 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Import inside the interceptor to avoid issues with Zustand hydration
-    const { useAuthStore } = require('@/store/auth');
 
     const accessToken = useAuthStore.getState().accessToken;
     if (accessToken) {
@@ -36,9 +35,9 @@ api.interceptors.response.use(
 
       try {
         // Import inside the interceptor to avoid issues with Zustand hydration
-        const { useAuthStore } = require('@/store/auth');
+      
 
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/refresh`, {}, { withCredentials: true });
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
         const newAccessToken = response.data.accessToken;
         useAuthStore.getState().setAccessToken(newAccessToken);
 

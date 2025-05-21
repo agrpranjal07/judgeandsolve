@@ -13,6 +13,7 @@ interface AuthState {
   setAccessToken: (token: string | null) => void;
   setUser: (user: User | null) => void;
   logout: () => void;
+  clearAccessToken: () => void;
 }
 
 const useAuthStore = create<AuthState>((set) => ({
@@ -29,6 +30,9 @@ const useAuthStore = create<AuthState>((set) => ({
       console.error('Logout API call failed:', error);
     }
   },
+  clearAccessToken: () => set({ accessToken: null }),
 }));
+export type { AuthState };
+
 
 export default useAuthStore;

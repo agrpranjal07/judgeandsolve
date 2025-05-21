@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import SocialAuthButton from '@/components/SocialAuthButton';
 import { useToast } from '@/hooks/use-toast';
 import useFormValidation from '@/hooks/useFormValidation';
+import useAuthStore from '@/store/auth';
 
 const LoginPage = () => {
   const router = useRouter();
@@ -47,7 +48,7 @@ const LoginPage = () => {
       const response = await api.post('/auth/login', data);
       const { token } = response.data;
 
-      localStorage.setItem('accessToken', token); // Adjust storage method if using cookies
+      useAuthStore.getState().setAccessToken(token);
 
       toast({
         title: 'Login Successful',
@@ -55,7 +56,7 @@ const LoginPage = () => {
         variant: 'default',
       });
 
-      router.push('/problems');
+      router.push('/');
     } catch (error: any) {
       toast({
         title: 'Login Failed',
