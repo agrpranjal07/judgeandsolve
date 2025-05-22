@@ -10,6 +10,7 @@ import authRouter from './routes/auth.routes.js';
 import { ApiError } from './utils/ApiError.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import cookieParser from 'cookie-parser';
+import './models/index.js';
 
 dotenv.config();
 
