@@ -1,14 +1,17 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../config/database.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/database.js";
 
 interface TagAttributes {
   id: string;
   name: string;
 }
 
-interface TagCreationAttributes extends Optional<TagAttributes, 'id'> {}
+interface TagCreationAttributes extends Optional<TagAttributes, "id"> {}
 
-class Tag extends Model<TagAttributes, TagCreationAttributes> implements TagAttributes {
+class Tag
+  extends Model<TagAttributes, TagCreationAttributes>
+  implements TagAttributes
+{
   public id!: string;
   public name!: string;
 }
@@ -28,9 +31,9 @@ Tag.init(
   },
   {
     sequelize,
-    tableName: 'tags',
-    modelName: 'Tag',
+    tableName: "tags",
+    modelName: "Tag",
   }
 );
 
-export default Tag; 
+export default Tag;

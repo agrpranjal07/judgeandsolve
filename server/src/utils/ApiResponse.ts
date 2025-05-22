@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response } from "express";
 
 export type ApiResponseOptions<T = any> = {
   statusCode?: number;
@@ -7,32 +7,38 @@ export type ApiResponseOptions<T = any> = {
   errors?: any[];
 };
 
-export const successResponse = <T>(res: Response, options: ApiResponseOptions<T>) => {
+export const successResponse = <T>(
+  res: Response,
+  options: ApiResponseOptions<T>
+) => {
   const {
     statusCode = 200,
-    message = 'Success',
+    message = "Success",
     data = null,
     errors = [],
   } = options;
 
   return res.status(statusCode).json({
-    status: 'success',
+    status: "success",
     message,
     data,
     errors,
   });
 };
 
-export const errorResponse = <T>(res: Response, options: ApiResponseOptions<T>) => {
+export const errorResponse = <T>(
+  res: Response,
+  options: ApiResponseOptions<T>
+) => {
   const {
     statusCode = 500,
-    message = 'Something went wrong',
+    message = "Something went wrong",
     data = null,
     errors = [],
   } = options;
 
   return res.status(statusCode).json({
-    status: `${statusCode}`.startsWith('4') ? 'fail' : 'error',
+    status: `${statusCode}`.startsWith("4") ? "fail" : "error",
     message,
     data,
     errors,

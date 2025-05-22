@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import { ApiError } from '../utils/ApiError.js';
-import { errorResponse } from '../utils/ApiResponse.js';
+import { Request, Response, NextFunction } from "express";
+import { ApiError } from "../utils/ApiError.js";
+import { errorResponse } from "../utils/ApiResponse.js";
 
 export const errorHandler = (
   err: Error | ApiError,
@@ -9,8 +9,8 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   let statusCode = 500;
-  let status = 'error';
-  let message = 'Something went very wrong!';
+  let status = "error";
+  let message = "Something went very wrong!";
   let responseErrors: any[] = [];
   let responseData: any | undefined = undefined;
 
@@ -21,8 +21,12 @@ export const errorHandler = (
     responseErrors = err.errors;
     responseData = err.data;
 
-    if (process.env.NODE_ENV === 'development' || !err.isOperational || err.statusCode >= 500) {
-      console.error('API Error:', {
+    if (
+      process.env.NODE_ENV === "development" ||
+      !err.isOperational ||
+      err.statusCode >= 500
+    ) {
+      console.error("API Error:", {
         name: err.name,
         message,
         statusCode,
@@ -34,8 +38,8 @@ export const errorHandler = (
       });
     }
   } else {
-    console.error('UNEXPECTED ERROR:', err);
-    if (process.env.NODE_ENV === 'development') {
+    console.error("UNEXPECTED ERROR:", err);
+    if (process.env.NODE_ENV === "development") {
       message = err.message;
     }
   }

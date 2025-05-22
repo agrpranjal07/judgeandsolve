@@ -1,7 +1,7 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import User from './user.model.js';
-import Problem from './problem.model.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/database.js";
+import User from "./user.model.js";
+import Problem from "./problem.model.js";
 
 interface SubmissionAttributes {
   id: string;
@@ -10,23 +10,46 @@ interface SubmissionAttributes {
   code: string;
   language: string;
   reviewNote?: string;
-  status: 'Pending' | 'Running' | 'Completed' | 'Failed';
-  verdict: 'Accepted' | 'Wrong Answer' | 'Time Limit Exceeded' | 'Runtime Error' | 'Compilation Error' | 'Internal Error' | 'Skipped' | 'Unknown';
+  status: "Pending" | "Running" | "Completed" | "Failed";
+  verdict:
+    | "Accepted"
+    | "Wrong Answer"
+    | "Time Limit Exceeded"
+    | "Runtime Error"
+    | "Compilation Error"
+    | "Internal Error"
+    | "Skipped"
+    | "Unknown";
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface SubmissionCreationAttributes extends Optional<SubmissionAttributes, 'id' | 'createdAt' | 'updatedAt' | 'reviewNote'> {}
+interface SubmissionCreationAttributes
+  extends Optional<
+    SubmissionAttributes,
+    "id" | "createdAt" | "updatedAt" | "reviewNote"
+  > {}
 
-class Submission extends Model<SubmissionAttributes, SubmissionCreationAttributes> implements SubmissionAttributes {
+class Submission
+  extends Model<SubmissionAttributes, SubmissionCreationAttributes>
+  implements SubmissionAttributes
+{
   public id!: string;
   public userId!: string;
   public problemId!: string;
   public code!: string;
   public language!: string;
   public reviewNote?: string;
-  public status!: 'Pending' | 'Running' | 'Completed' | 'Failed';
-  public verdict!: 'Accepted' | 'Wrong Answer' | 'Time Limit Exceeded' | 'Runtime Error' | 'Compilation Error' | 'Internal Error' | 'Skipped' | 'Unknown';
+  public status!: "Pending" | "Running" | "Completed" | "Failed";
+  public verdict!:
+    | "Accepted"
+    | "Wrong Answer"
+    | "Time Limit Exceeded"
+    | "Runtime Error"
+    | "Compilation Error"
+    | "Internal Error"
+    | "Skipped"
+    | "Unknown";
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -43,7 +66,7 @@ Submission.init(
       allowNull: false,
       references: {
         model: User,
-        key: 'id',
+        key: "id",
       },
     },
     problemId: {
@@ -51,7 +74,7 @@ Submission.init(
       allowNull: false,
       references: {
         model: Problem,
-        key: 'id',
+        key: "id",
       },
     },
     code: {
@@ -67,11 +90,20 @@ Submission.init(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM('Pending', 'Running', 'Completed', 'Failed'),
+      type: DataTypes.ENUM("Pending", "Running", "Completed", "Failed"),
       allowNull: false,
     },
     verdict: {
-      type: DataTypes.ENUM('Accepted', 'Wrong Answer', 'Time Limit Exceeded', 'Runtime Error', 'Compilation Error', 'Internal Error', 'Skipped', 'Unknown'),
+      type: DataTypes.ENUM(
+        "Accepted",
+        "Wrong Answer",
+        "Time Limit Exceeded",
+        "Runtime Error",
+        "Compilation Error",
+        "Internal Error",
+        "Skipped",
+        "Unknown"
+      ),
       allowNull: false,
     },
     createdAt: {
@@ -87,14 +119,14 @@ Submission.init(
   },
   {
     sequelize,
-    tableName: 'submissions',
-    modelName: 'Submission',
+    tableName: "submissions",
+    modelName: "Submission",
   }
 );
 
-User.hasMany(Submission, { foreignKey: 'userId', as: 'submissions' });
-Submission.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-Problem.hasMany(Submission, { foreignKey: 'problemId', as: 'submissions' });
-Submission.belongsTo(Problem, { foreignKey: 'problemId', as: 'problem' });
+User.hasMany(Submission, { foreignKey: "userId", as: "submissions" });
+Submission.belongsTo(User, { foreignKey: "userId", as: "user" });
+Problem.hasMany(Submission, { foreignKey: "problemId", as: "submissions" });
+Submission.belongsTo(Problem, { foreignKey: "problemId", as: "problem" });
 
-export default Submission; 
+export default Submission;

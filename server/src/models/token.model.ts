@@ -1,6 +1,6 @@
-import { DataTypes, Model } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import  User  from './user.model.js'; 
+import { DataTypes, Model } from "sequelize";
+import { sequelize } from "../config/database.js";
+import User from "./user.model.js";
 
 export default class Token extends Model {
   public id!: string;
@@ -27,7 +27,7 @@ Token.init(
       allowNull: false,
       references: {
         model: User,
-        key: 'id',
+        key: "id",
       },
     },
     refreshToken: {
@@ -49,18 +49,18 @@ Token.init(
     },
   },
   {
-    tableName: 'tokens',
+    tableName: "tokens",
     sequelize,
   }
 );
 
 // Define the association
 User.hasMany(Token, {
-  foreignKey: 'userId',
-  as: 'tokens',
+  foreignKey: "userId",
+  as: "tokens",
 });
 
 Token.belongsTo(User, {
-  foreignKey: 'userId',
-  as: 'user',
+  foreignKey: "userId",
+  as: "user",
 });

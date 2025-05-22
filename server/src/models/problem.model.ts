@@ -1,12 +1,12 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import User from './user.model.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/database.js";
+import User from "./user.model.js";
 
 interface ProblemAttributes {
   id: string;
   title: string;
   description: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  difficulty: "Easy" | "Medium" | "Hard";
   sampleInput: string;
   sampleOutput: string;
   createdAt?: Date;
@@ -14,13 +14,17 @@ interface ProblemAttributes {
   createdBy: string;
 }
 
-interface ProblemCreationAttributes extends Optional<ProblemAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+interface ProblemCreationAttributes
+  extends Optional<ProblemAttributes, "id" | "createdAt" | "updatedAt"> {}
 
-class Problem extends Model<ProblemAttributes, ProblemCreationAttributes> implements ProblemAttributes {
+class Problem
+  extends Model<ProblemAttributes, ProblemCreationAttributes>
+  implements ProblemAttributes
+{
   public id!: string;
   public title!: string;
   public description!: string;
-  public difficulty!: 'Easy' | 'Medium' | 'Hard';
+  public difficulty!: "Easy" | "Medium" | "Hard";
   public sampleInput!: string;
   public sampleOutput!: string;
   public createdBy!: string;
@@ -44,7 +48,7 @@ Problem.init(
       allowNull: false,
     },
     difficulty: {
-      type: DataTypes.ENUM('Easy', 'Medium', 'Hard'),
+      type: DataTypes.ENUM("Easy", "Medium", "Hard"),
       allowNull: false,
     },
     sampleInput: {
@@ -60,7 +64,7 @@ Problem.init(
       allowNull: false,
       references: {
         model: User,
-        key: 'id',
+        key: "id",
       },
     },
     createdAt: {
@@ -76,12 +80,12 @@ Problem.init(
   },
   {
     sequelize,
-    tableName: 'problems',
-    modelName: 'Problem',
+    tableName: "problems",
+    modelName: "Problem",
   }
 );
 
-User.hasMany(Problem, { foreignKey: 'createdBy', as: 'problems' });
-Problem.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+User.hasMany(Problem, { foreignKey: "createdBy", as: "problems" });
+Problem.belongsTo(User, { foreignKey: "createdBy", as: "creator" });
 
-export default Problem; 
+export default Problem;
