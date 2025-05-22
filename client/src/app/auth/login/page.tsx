@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
-import api from '@/services/api';
+import api from '@/_services/api';
 import {
   Card,
   CardContent,
@@ -11,19 +11,21 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Separator } from "@/components/ui/separator";
-import SocialAuthButton from '@/components/SocialAuthButton';
-import { useToast } from '@/hooks/use-toast';
-import useFormValidation from '@/hooks/useFormValidation';
-import useAuthStore from '@/store/auth';
+} from '@/_components/ui/card';
+import { Input } from '@/_components/ui/input';
+import { Button } from '@/_components/ui/button';
+import { Label } from '@/_components/ui/label';
+import { Separator } from "@/_components/ui/separator";
+import SocialAuthButton from '@/_components/SocialAuthButton';
+import { useToast } from '@/_hooks/use-toast';
+import useFormValidation from '@/_hooks/useFormValidation';
+import { useAuth } from '@/_hooks/useAuth';
 
 const LoginPage = () => {
   const router = useRouter();
   const { toast } = useToast();
+
+  const { setAccessToken, setUser } = useAuth();
 
   const loginSchema = z.object({
     email: z.string().email('Invalid email address'),
@@ -45,10 +47,13 @@ const LoginPage = () => {
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
-      const response = await api.post('/auth/login', data);
-      const { token } = response.data;
+      const loginResponse = await api.post('/auth/login', data);
+      const { accessToken } = loginResponse.data.data;
+      setAccessToken(accessToken);
 
-      useAuthStore.getState().setAccessToken(token);
+      const { data:{data: userProfile} } = await api.get('/auth/me');
+      console.log(userProfile);
+      setUser(userProfile);
 
       toast({
         title: 'Login Successful',

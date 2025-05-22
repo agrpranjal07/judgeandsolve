@@ -1,155 +1,252 @@
-
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Code, Trophy, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/_components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/_components/ui/card";
+import { ArrowRight, Code, BarChart, Trophy, Clock } from "lucide-react";
+import { Badge } from "@/_components/ui/badge";
+import useAuthStore from "@/_store/auth";
 
-export default function HomePage(){
-  const router = useRouter();
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
-      
-      {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400">
-            Welcome to JudgeAndSolve
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Solve coding problems, improve your skills, and compete with others in our programming challenges
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button 
-              className="bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600 text-white px-8 py-6 h-auto text-lg font-medium shadow-lg transition-all duration-300 hover:scale-105"
-              onClick={() => router.push('/problems')}
-            >
-              Start Solving <ArrowRight className="ml-2" />
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-violet-600 dark:border-violet-500 text-violet-600 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 px-8 py-6 h-auto text-lg font-medium transition-all duration-300"
-              onClick={() => router.push('/auth/signup')}
-            >
-              Create Account
-            </Button>
-          </div>
-        </div>
-      </section>
+// Mock data (you'll replace this with real API data later)
+const recentSubmissions = [
+  { id: 1, problem: "Two Sum", verdict: "ACCEPTED", language: "Python", time: "2 hours ago" },
+  { id: 2, problem: "Binary Tree Traversal", verdict: "WRONG_ANSWER", language: "JavaScript", time: "1 day ago" },
+  { id: 3, problem: "Merge Sort", verdict: "TIME_LIMIT_EXCEEDED", language: "C++", time: "3 days ago" },
+];
 
-      {/* Features Grid */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Featured Problems Card */}
-          <Card className="bg-card border border-border/40 shadow-md hover:shadow-lg transition-all duration-300 hover:border-violet-400/30 dark:hover:border-violet-700/30">
-            <CardHeader className="pb-3">
-              <div className="w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
-                <Code className="text-violet-600 dark:text-violet-400" />
-              </div>
-              <CardTitle className="text-2xl font-bold">Featured Problems</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-muted-foreground">
-                Start solving our carefully curated collection of coding problems ranging from beginner to advanced levels
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full bg-violet-600 hover:bg-violet-700 dark:bg-violet-700/80 dark:hover:bg-violet-700 text-white"
-                onClick={() => router.push('/problems')}
-              >
-                Browse Problems <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-
-          {/* Leaderboard Card */}
-          <Card className="bg-card border border-border/40 shadow-md hover:shadow-lg transition-all duration-300 hover:border-violet-400/30 dark:hover:border-violet-700/30">
-            <CardHeader className="pb-3">
-              <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
-                <Trophy className="text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <CardTitle className="text-2xl font-bold">Leaderboard</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-muted-foreground">
-                See how you rank against other developers and compete to reach the top of our global leaderboard
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700/80 dark:hover:bg-indigo-700 text-white"
-                onClick={() => router.push('/leaderboard')}
-              >
-                View Leaderboard <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-
-          {/* Your Progress Card */}
-          <Card className="bg-card border border-border/40 shadow-md hover:shadow-lg transition-all duration-300 hover:border-violet-400/30 dark:hover:border-violet-700/30">
-            <CardHeader className="pb-3">
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-                <User className="text-blue-600 dark:text-blue-400" />
-              </div>
-              <CardTitle className="text-2xl font-bold">Your Progress</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-muted-foreground">
-                Track your solving progress, view past submissions, and improve your coding skills with personalized insights
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-700/80 dark:hover:bg-blue-700 text-white"
-                onClick={() => router.push('/me')}
-              >
-                View Profile <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-violet-600 dark:text-violet-400">500+</div>
-            <div className="text-sm text-muted-foreground">Coding Problems</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">50K+</div>
-            <div className="text-sm text-muted-foreground">Active Users</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">1M+</div>
-            <div className="text-sm text-muted-foreground">Submissions</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-violet-600 dark:text-violet-400">20+</div>
-            <div className="text-sm text-muted-foreground">Programming Languages</div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl font-bold mb-4">Ready to take your coding skills to the next level?</h2>
-        <p className="text-muted-foreground mb-8">
-          Join JudgeAndSolve today and start your journey toward becoming a better programmer
-        </p>
-        <Button 
-          className="bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600 text-white px-8 py-6 h-auto text-lg font-medium shadow-lg transition-all duration-300"
-          onClick={() => router.push('/signup')}
-        >
-          Join Now
-        </Button>
-      </section>
-    </div>
-  );
+const getVerdictColor = (verdict: string) => {
+  switch (verdict) {
+    case "ACCEPTED": return "bg-green-500";
+    case "WRONG_ANSWER": return "bg-red-500";
+    case "TIME_LIMIT_EXCEEDED": return "bg-amber-500";
+    default: return "bg-gray-500";
+  }
 };
 
+export default function HomePage() {
+  const router = useRouter();
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
 
+  return (
+    <div className="min-h-[calc(100vh-var(--header-height))] bg-gradient-to-br from-background to-muted/30">
+      {!accessToken ? (
+        <>
+          {/* Hero Section */}
+          <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto text-center">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400">
+                Welcome to JudgeAndSolve
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+                Solve coding problems, improve your skills, and compete with others in our programming challenges
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Button onClick={() => router.push("/problems")}>
+                  Start Solving <ArrowRight className="ml-2" />
+                </Button>
+                <Button variant="outline" onClick={() => router.push("/auth/signup")}>
+                  Create Account
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          {/* Features Section */}
+          <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[{
+                title: "Browse Problems",
+                icon: <Code className="text-violet-600 dark:text-violet-400" />,
+                description: "Explore 500+ challenges from beginner to expert level.",
+                action: () => router.push("/problems")
+              },
+              {
+                title: "Leaderboard",
+                icon: <Trophy className="text-violet-600 dark:text-violet-400" />,
+                description: "Climb ranks and challenge 50K+ active users.",
+                action: () => router.push("/stats/leaderboard")
+              },
+              {
+                title: "Track Progress",
+                icon: <BarChart className="text-violet-600 dark:text-violet-400" />,
+                description: "Get personalized stats and insights.",
+                action: () => router.push("/auth/login")
+              }].map((card, idx) => (
+                <Card key={idx}>
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
+                      {card.icon}
+                    </div>
+                    <CardTitle className="text-2xl font-bold">{card.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{card.description}</p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="ghost" onClick={card.action}>
+                      Learn More <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* Stats Section */}
+          <section className="py-16 bg-muted/30 px-4 sm:px-6 lg:px-8 text-center">
+            <div className="max-w-7xl mx-auto">
+              <h2 className="text-3xl font-bold mb-12">Join our growing community</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <StatCard count="500+" label="Coding Problems" />
+                <StatCard count="1M+" label="Submissions" />
+                <StatCard count="50K+" label="Active Users" />
+              </div>
+            </div>
+          </section>
+
+          {/* CTA */}
+          <section className="py-20 text-center max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold mb-4">Ready to enhance your coding skills?</h2>
+            <p className="text-muted-foreground mb-6">Create an account and start solving now.</p>
+            <Button onClick={() => router.push("/auth/signup")}>
+              Join Now
+            </Button>
+          </section>
+        </>
+      ) : (
+        <div className="container mx-auto pt-8 px-4">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome back, <span className="text-violet-600 dark:text-violet-400">{user?.username}</span>
+            </h1>
+            <p className="text-muted-foreground mb-8">Continue your coding journey</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+              <HomeCard
+                icon={<Code className="text-violet-600" />}
+                title="Continue Solving"
+                description="Pick up where you left off with suggested problems."
+                tags={["Arrays", "Strings", "DP"]}
+                actionText="Browse Problems"
+                onAction={() => router.push("/problems")}
+              />
+              <HomeCard
+                icon={<Clock className="text-violet-600" />}
+                title="Recent Submissions"
+                description="Your latest attempts:"
+                list={recentSubmissions}
+                onAction={() => router.push("/submissions")}
+              />
+              <HomeCard
+                icon={<Trophy className="text-violet-600" />}
+                title="Your Stats"
+                description=""
+                stats={{ solved: 32, acceptance: "68%", total: 61 }}
+                onAction={() => router.push("/me")}
+              />
+            </div>
+          
+          {/* Recommendations Section */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Recommended for you</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {["Graph Algorithms", "Dynamic Programming", "Binary Search"].map((category, index) => (
+                <Card key={index} className="bg-card hover:shadow-md transition-all duration-200">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{category}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {`Improve your ${category.toLowerCase()} skills with our curated problems.`}
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="ghost" className="w-full">
+                      Explore
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </section>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ count, label }: { count: string; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-4xl font-bold text-violet-600 dark:text-violet-400">{count}</span>
+      <span className="text-muted-foreground mt-2">{label}</span>
+    </div>
+  );
+}
+
+function HomeCard({
+  icon,
+  title,
+  description,
+  tags,
+  stats,
+  list,
+  actionText = "Explore",
+  onAction
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description?: string;
+  tags?: string[];
+  stats?: { solved: number; acceptance: string; total: number };
+  list?: any[];
+  actionText?: string;
+  onAction: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {icon}
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {description && <p className="text-muted-foreground mb-4">{description}</p>}
+        {tags && (
+          <div className="flex gap-2 flex-wrap mb-4">
+            {tags.map((tag, i) => (
+              <Badge key={i} variant="outline">{tag}</Badge>
+            ))}
+          </div>
+        )}
+        {stats && (
+          <div className="space-y-2">
+            <div className="flex justify-between"><span>Problems Solved</span><strong>{stats.solved}</strong></div>
+            <div className="flex justify-between"><span>Acceptance Rate</span><strong>{stats.acceptance}</strong></div>
+            <div className="flex justify-between"><span>Total Submissions</span><strong>{stats.total}</strong></div>
+          </div>
+        )}
+        {list && (
+          <ul className="space-y-3">
+            {list.map((s, i) => (
+              <li key={i} className="flex items-center justify-between border-b border-border/30 pb-2">
+                <div>
+                  <p className="font-medium">{s.problem}</p>
+                  <div className="text-xs text-muted-foreground font-mono">{s.language} • {s.time}</div>
+                </div>
+                <Badge className={getVerdictColor(s.verdict)}>{s.verdict}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+      <CardFooter>
+        <Button onClick={onAction} className="w-full">{actionText}</Button>
+      </CardFooter>
+    </Card>
+  );
+}

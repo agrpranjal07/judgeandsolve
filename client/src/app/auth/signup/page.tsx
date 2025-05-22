@@ -3,15 +3,15 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import SocialAuthButton from '@/components/SocialAuthButton';
-import { useToast } from '@/hooks/use-toast';
-import useFormValidation from '@/hooks/useFormValidation'; // Import useFormValidation
-import api from '@/services/api';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/_components/ui/card";
+import { Input } from "@/_components/ui/input";
+import { Button } from "@/_components/ui/button";
+import { Label } from "@/_components/ui/label";
+import { Separator } from "@/_components/ui/separator";
+import SocialAuthButton from '@/_components/SocialAuthButton';
+import { useToast } from '@/_hooks/use-toast';
+import useFormValidation from '@/_hooks/useFormValidation'; // Import useFormValidation
+import api from '@/_services/api';
 
 const SignupPage = () => {
   const { toast } = useToast();
