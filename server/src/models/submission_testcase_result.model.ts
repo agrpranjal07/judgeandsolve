@@ -1,7 +1,7 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import Submission from './submission.model.js';
-import Testcase from './testcase.model.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/database.js";
+import Submission from "./submission.model.js";
+import Testcase from "./testcase.model.js";
 
 interface SubmissionTestcaseResultAttributes {
   id: string;
@@ -12,9 +12,16 @@ interface SubmissionTestcaseResultAttributes {
   memory: number;
 }
 
-interface SubmissionTestcaseResultCreationAttributes extends Optional<SubmissionTestcaseResultAttributes, 'id'> {}
+interface SubmissionTestcaseResultCreationAttributes
+  extends Optional<SubmissionTestcaseResultAttributes, "id"> {}
 
-class SubmissionTestcaseResult extends Model<SubmissionTestcaseResultAttributes, SubmissionTestcaseResultCreationAttributes> implements SubmissionTestcaseResultAttributes {
+class SubmissionTestcaseResult
+  extends Model<
+    SubmissionTestcaseResultAttributes,
+    SubmissionTestcaseResultCreationAttributes
+  >
+  implements SubmissionTestcaseResultAttributes
+{
   public id!: string;
   public submissionId!: string;
   public testcaseId!: string;
@@ -35,7 +42,7 @@ SubmissionTestcaseResult.init(
       allowNull: false,
       references: {
         model: Submission,
-        key: 'id',
+        key: "id",
       },
     },
     testcaseId: {
@@ -43,7 +50,7 @@ SubmissionTestcaseResult.init(
       allowNull: false,
       references: {
         model: Testcase,
-        key: 'id',
+        key: "id",
       },
     },
     passed: {
@@ -61,14 +68,26 @@ SubmissionTestcaseResult.init(
   },
   {
     sequelize,
-    tableName: 'submission_testcase_results',
-    modelName: 'SubmissionTestcaseResult',
+    tableName: "submission_testcase_results",
+    modelName: "SubmissionTestcaseResult",
   }
 );
 
-Submission.hasMany(SubmissionTestcaseResult, { foreignKey: 'submissionId', as: 'testcaseResults' });
-SubmissionTestcaseResult.belongsTo(Submission, { foreignKey: 'submissionId', as: 'submission' });
-Testcase.hasMany(SubmissionTestcaseResult, { foreignKey: 'testcaseId', as: 'submissionResults' });
-SubmissionTestcaseResult.belongsTo(Testcase, { foreignKey: 'testcaseId', as: 'testcase' });
+Submission.hasMany(SubmissionTestcaseResult, {
+  foreignKey: "submissionId",
+  as: "testcaseResults",
+});
+SubmissionTestcaseResult.belongsTo(Submission, {
+  foreignKey: "submissionId",
+  as: "submission",
+});
+Testcase.hasMany(SubmissionTestcaseResult, {
+  foreignKey: "testcaseId",
+  as: "submissionResults",
+});
+SubmissionTestcaseResult.belongsTo(Testcase, {
+  foreignKey: "testcaseId",
+  as: "testcase",
+});
 
-export default SubmissionTestcaseResult; 
+export default SubmissionTestcaseResult;

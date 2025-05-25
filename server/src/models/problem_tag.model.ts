@@ -1,7 +1,7 @@
-import { DataTypes, Model } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import Problem from './problem.model.js';
-import Tag from './tag.model.js';
+import { DataTypes, Model } from "sequelize";
+import { sequelize } from "../config/database.js";
+import Problem from "./problem.model.js";
+import Tag from "./tag.model.js";
 
 class ProblemTag extends Model {
   public problemId!: string;
@@ -15,7 +15,7 @@ ProblemTag.init(
       allowNull: false,
       references: {
         model: Problem,
-        key: 'id',
+        key: "id",
       },
       primaryKey: true,
     },
@@ -24,20 +24,28 @@ ProblemTag.init(
       allowNull: false,
       references: {
         model: Tag,
-        key: 'id',
+        key: "id",
       },
       primaryKey: true,
     },
   },
   {
     sequelize,
-    tableName: 'problem_tags',
-    modelName: 'ProblemTag',
+    tableName: "problem_tags",
+    modelName: "ProblemTag",
     timestamps: false,
   }
 );
 
-Problem.belongsToMany(Tag, { through: ProblemTag, foreignKey: 'problemId', as: 'tags' });
-Tag.belongsToMany(Problem, { through: ProblemTag, foreignKey: 'tagId', as: 'problems' });
+Problem.belongsToMany(Tag, {
+  through: ProblemTag,
+  foreignKey: "problemId",
+  as: "tags",
+});
+Tag.belongsToMany(Problem, {
+  through: ProblemTag,
+  foreignKey: "tagId",
+  as: "problems",
+});
 
-export default ProblemTag; 
+export default ProblemTag;

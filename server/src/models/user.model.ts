@@ -1,6 +1,6 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import bcrypt from 'bcryptjs';
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/database.js";
+import bcrypt from "bcryptjs";
 
 interface UserAttributes {
   id: string;
@@ -8,20 +8,24 @@ interface UserAttributes {
   email: string;
   githubId?: string;
   password?: string;
-  usertype: 'Admin' | 'User';
+  usertype: "Admin" | "User";
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+interface UserCreationAttributes
+  extends Optional<UserAttributes, "id" | "createdAt" | "updatedAt"> {}
 
-class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
+class User
+  extends Model<UserAttributes, UserCreationAttributes>
+  implements UserAttributes
+{
   public id!: string;
   public username!: string;
   public email!: string;
   public githubId?: string;
   public password?: string;
-  public usertype!: 'Admin' | 'User';
+  public usertype!: "Admin" | "User";
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -64,9 +68,9 @@ User.init(
       allowNull: true, // Allow null for users who sign up with OAuth
     },
     usertype: {
-      type: DataTypes.ENUM('Admin', 'User'),
+      type: DataTypes.ENUM("Admin", "User"),
       allowNull: false,
-      defaultValue: 'User',
+      defaultValue: "User",
     },
     createdAt: {
       type: DataTypes.DATE,
@@ -81,8 +85,8 @@ User.init(
   },
   {
     sequelize,
-    tableName: 'users',
-    modelName: 'User',
+    tableName: "users",
+    modelName: "User",
     hooks: {
       beforeCreate: async (user: User) => {
         if (user.password) {
@@ -91,7 +95,7 @@ User.init(
         }
       },
       beforeUpdate: async (user: User) => {
-        if (user.changed('password') && user.password) {
+        if (user.changed("password") && user.password) {
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(user.password, salt);
         }

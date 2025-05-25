@@ -1,6 +1,6 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import Problem from './problem.model.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/database.js";
+import Problem from "./problem.model.js";
 
 interface TestcaseAttributes {
   id: string;
@@ -10,9 +10,13 @@ interface TestcaseAttributes {
   isSample: boolean;
 }
 
-interface TestcaseCreationAttributes extends Optional<TestcaseAttributes, 'id'> {}
+interface TestcaseCreationAttributes
+  extends Optional<TestcaseAttributes, "id"> {}
 
-class Testcase extends Model<TestcaseAttributes, TestcaseCreationAttributes> implements TestcaseAttributes {
+class Testcase
+  extends Model<TestcaseAttributes, TestcaseCreationAttributes>
+  implements TestcaseAttributes
+{
   public id!: string;
   public problemId!: string;
   public input!: string;
@@ -32,7 +36,7 @@ Testcase.init(
       allowNull: false,
       references: {
         model: Problem,
-        key: 'id',
+        key: "id",
       },
     },
     input: {
@@ -51,12 +55,12 @@ Testcase.init(
   },
   {
     sequelize,
-    tableName: 'testcases',
-    modelName: 'Testcase',
+    tableName: "testcases",
+    modelName: "Testcase",
   }
 );
 
-Problem.hasMany(Testcase, { foreignKey: 'problemId', as: 'testcases' });
-Testcase.belongsTo(Problem, { foreignKey: 'problemId', as: 'problem' });
+Problem.hasMany(Testcase, { foreignKey: "problemId", as: "testcases" });
+Testcase.belongsTo(Problem, { foreignKey: "problemId", as: "problem" });
 
-export default Testcase; 
+export default Testcase;
