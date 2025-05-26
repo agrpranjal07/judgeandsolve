@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import Submission from "../models/submission.model.js";
 import Problem from "../models/problem.model.js";
 import { throwIf, sendSuccess } from "../utils/helper.js";
+import { judgeQueue } from "../judge/judgeQueue.js";
+import SubmissionTestcaseResult from "../models/submission_testcase_result.model.js";
 
 const isAdmin = (user: any) => user && user.usertype === "Admin";
 
@@ -14,13 +16,22 @@ export const submitCode = async (req: Request, res: Response) => {
     throwIf(!problem, 404, "Problem not found");
     const userId = (req.user as any)?.id;
     throwIf(!userId, 401, "User not found");
+    // Normalize and validate language
+    const normalizedLanguage = language.trim().toLowerCase();
+    const allowedLanguages = ["python", "cpp", "js"];
+    throwIf(!allowedLanguages.includes(normalizedLanguage), 400, "Unsupported language");
     const submission = await Submission.create({
       userId: userId,
       problemId,
       code,
-      language,
+      language: normalizedLanguage,
       status: "Pending",
       verdict: "Unknown",
+    });
+    const result = await judgeQueue.add("judge", {
+      submissionId: submission.id,
+      code,
+      language: normalizedLanguage
     });
     return sendSuccess(res, 201, "Submission created", submission);
   } catch (err) { throw err; }
@@ -52,7 +63,13 @@ export const getSubmissionById = async (req: Request, res: Response) => {
       403,
       "Not authorized to view this submission"
     );
-    return sendSuccess(res, 200, "Submission fetched", submission);
+    const testcaseResults = await SubmissionTestcaseResult.findAll({
+      where: { submissionId: id },
+    });
+    return sendSuccess(res, 200, "Submission fetched", {
+      ...submission,
+      testcaseResults,
+    });
   } catch (err) { throw err; }
 };
 
@@ -66,4 +83,4 @@ export const getProblemSubmissions = async (req: Request, res: Response) => {
     });
     return sendSuccess(res, 200, "Problem submissions fetched", submissions);
   } catch (err) { throw err; }
-}; 
+};
