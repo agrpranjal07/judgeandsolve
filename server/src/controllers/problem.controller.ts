@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Problem from "../models/problem.model.js";
 import { throwIf, sendSuccess } from "../utils/helper.js";
+import { ApiError } from "../utils/ApiError.js";
 
 
 // Create Problem (Admin only)
@@ -31,7 +32,7 @@ export const createProblem = async (req: Request, res: Response) => {
       return sendSuccess(res, 201, "Problem created", problem);
     }
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to create problem");
   }
 };
 
@@ -60,7 +61,7 @@ export const getProblems = async (req: Request, res: Response) => {
       total: count,
     });
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to fetch problems");
   }
 };
 
@@ -72,7 +73,7 @@ export const getProblemById = async (req: Request, res: Response) => {
     throwIf(!problem, 404, "Problem not found");
     return sendSuccess(res, 200, "Problem fetched", problem);
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to fetch problem");
   }
 };
 
@@ -101,7 +102,7 @@ export const updateProblem = async (req: Request, res: Response) => {
       return sendSuccess(res, 200, "Problem updated", problem);
     }
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to update problem");
   }
 };
 
@@ -115,7 +116,7 @@ export const deleteProblem = async (req: Request, res: Response) => {
       await problem.destroy();
       return sendSuccess(res, 200, "Problem deleted");
     }
-  } catch (err) {
-    throw err;
+  } catch (err: any) {
+    throw new ApiError(500, "Failed to delete problem")
   }
 };

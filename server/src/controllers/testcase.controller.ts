@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Testcase from "../models/testcase.model.js";
 import Problem from "../models/problem.model.js";
 import { throwIf, sendSuccess } from "../utils/helper.js";
+import { ApiError } from "../utils/ApiError.js";
 
 // Add new testcase (Admin only)
 export const addTestcase = async (req: Request, res: Response) => {
@@ -19,7 +20,7 @@ export const addTestcase = async (req: Request, res: Response) => {
     });
     return sendSuccess(res, 201, "Testcase created", testcase);
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to create testcase");
   }
 };
 
@@ -30,7 +31,7 @@ export const listTestcases = async (req: Request, res: Response) => {
     const testcases = await Testcase.findAll({ where: { problemId } });
     return sendSuccess(res, 200, "Testcases fetched", testcases);
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to fetch testcases");
   }
 };
 
@@ -43,7 +44,7 @@ export const listSampleTestcases = async (req: Request, res: Response) => {
     });
     return sendSuccess(res, 200, "Sample testcases fetched", testcases);
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to fetch sample testcases");
   }
 };
 
@@ -63,7 +64,7 @@ export const updateTestcase = async (req: Request, res: Response) => {
       return sendSuccess(res, 200, "Testcase updated", testcase);
     }
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to update testcase");
   }
 };
 
@@ -78,6 +79,6 @@ export const deleteTestcase = async (req: Request, res: Response) => {
       return sendSuccess(res, 200, "Testcase deleted");
     }
   } catch (err) {
-    throw err;
+    throw new ApiError(500, "Failed to delete testcase");
   }
 };

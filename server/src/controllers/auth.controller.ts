@@ -31,7 +31,7 @@ export const signup = async (req: Request, res: Response) => {
     input = signupSchema.parse(req.body);
   } catch (err) {
     if (err instanceof ZodError) return handleZodError(err);
-    throw err;
+    throw new ApiError(400, "Invalid input data");
   }
 
   const { username, email, password } = input;
@@ -56,7 +56,7 @@ export const login = async (req: Request, res: Response) => {
     input = loginSchema.parse(req.body);
   } catch (err) {
     if (err instanceof ZodError) return handleZodError(err);
-    throw err;
+    throw new ApiError(400, "Invalid input data");
   }
 
   const { email, password } = input;
