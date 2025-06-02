@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateJWT } from "../middleware/auth.middleware.js";
+import { authenticateJWT, isAdmin } from "../middleware/auth.middleware.js";
 import {
   createTag,
   getTags,
@@ -9,12 +9,10 @@ import {
 
 const tagRouter = express.Router();
 
-tagRouter.use(authenticateJWT);
-
-tagRouter.post("/tags", createTag);
+tagRouter.post("/tags",authenticateJWT,isAdmin, createTag);
 tagRouter.get("/tags", getTags);
 tagRouter.get("/problems/:problemId/tags", getTags);
-tagRouter.post("/problems/:problemId/tags", setTags);
-tagRouter.delete("/problems/:problemId/tags/:tagId", removeTag);
+tagRouter.post("/problems/:problemId/tags",authenticateJWT,isAdmin, setTags);
+tagRouter.delete("/problems/:problemId/tags/:tagId",authenticateJWT,isAdmin, removeTag);
 
 export default tagRouter; 

@@ -10,14 +10,11 @@ import {
 
 const problemRouter = express.Router();
 
-// All routes require authentication
-problemRouter.use(authenticateJWT);
-
 
 problemRouter.get("/", getProblems);
 problemRouter.get("/:id", getProblemById);
-problemRouter.post("/",isAdmin, createProblem);
-problemRouter.put("/:id",isAdmin, updateProblem);
-problemRouter.delete("/:id",isAdmin, deleteProblem);
+problemRouter.post("/",authenticateJWT, isAdmin, createProblem);
+problemRouter.put("/:id",authenticateJWT, isAdmin, updateProblem);
+problemRouter.delete("/:id",authenticateJWT, isAdmin, deleteProblem);
 
 export default problemRouter;

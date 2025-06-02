@@ -10,12 +10,11 @@ import {
 
 const testcaseRouter = express.Router();
 
-testcaseRouter.use(authenticateJWT, isAdmin);
 
-testcaseRouter.post("/problems/:problemId/testcases", addTestcase);
-testcaseRouter.get("/problems/:problemId/testcases", listTestcases);
+testcaseRouter.post("/problems/:problemId/testcases",authenticateJWT, isAdmin, addTestcase);
+testcaseRouter.get("/problems/:problemId/testcases",authenticateJWT, listTestcases);
 testcaseRouter.get("/problems/:problemId/testcases/public", listSampleTestcases);
-testcaseRouter.put("/testcases/:id", updateTestcase);
-testcaseRouter.delete("/testcases/:id", deleteTestcase);
+testcaseRouter.put("/testcases/:id",authenticateJWT, isAdmin, updateTestcase);
+testcaseRouter.delete("/testcases/:id",authenticateJWT, isAdmin, deleteTestcase);
 
 export default testcaseRouter; 

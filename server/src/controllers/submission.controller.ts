@@ -6,6 +6,7 @@ import { judgeQueue } from "../judge/judgeQueue.js";
 import SubmissionTestcaseResult from "../models/submission_testcase_result.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import langMap from "../config/languageMap.js";
+import { runJudgeJob } from "../judge/judgeRunner.js";
 
 const isAdmin = (user: any) => user && user.usertype === "Admin";
 
@@ -20,7 +21,7 @@ export const submitCode = async (req: Request, res: Response) => {
     throwIf(!userId, 401, "User not found");
     // Normalize and validate language
     const normalizedLanguage = language.trim().toLowerCase();
-    const allowedLanguages = ["python", "cpp", "js"];
+    const allowedLanguages = Object.keys(langMap);
     throwIf(!allowedLanguages.includes(normalizedLanguage), 400, "Unsupported language");
     const submission = await Submission.create({
       userId: userId,
@@ -41,6 +42,41 @@ export const submitCode = async (req: Request, res: Response) => {
   }
 };
 
+// Test sample code against provided test cases
+export const testSampleCode = async (req: Request, res: Response) => {
+  try {
+    const { problemId, code, language, testcases } = req.body;
+
+    // Validate input
+    throwIf(!problemId || !code || !language || !Array.isArray(testcases), 400, "Missing required fields");
+
+    const normalizedLang = language.trim().toLowerCase();
+    const supportedLangs = Object.keys(langMap);
+    throwIf(!supportedLangs.includes(normalizedLang), 400, "Unsupported language");
+
+    // Run judge job
+    const results = await runJudgeJob({
+      submissionId: "test-" + Date.now(), 
+      code,
+      language: normalizedLang,
+      testcases: testcases.map((tc: any, idx: number) => ({
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+        testcaseId: `sample-${idx + 1}`
+      })),
+      timeLimit: 2,
+      memoryLimit: 128
+    });
+
+    return sendSuccess(res, 200, "Sample test run completed", results);
+  } catch (err) {
+    console.error(err);
+    throw new ApiError(500, "Failed to run test cases");
+  }
+};
+
+
+
 // List all submissions of the logged-in user
 export const listUserSubmissions = async (req: Request, res: Response) => {
   try {
@@ -49,6 +85,18 @@ export const listUserSubmissions = async (req: Request, res: Response) => {
     const submissions = await Submission.findAll({
       where: { userId },
       order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: Problem,
+          as: "problem",
+          attributes: ["title"],
+        },
+        {
+          model: SubmissionTestcaseResult,
+          as: "testcaseResults",
+          attributes: ["runtime", "memory"],
+        },
+      ],
     });
     return sendSuccess(res, 200, "User submissions fetched", submissions);
   } catch (err){
@@ -56,6 +104,24 @@ export const listUserSubmissions = async (req: Request, res: Response) => {
   }
 };
 
+export const getUserSolvedProblems = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    throwIf(!userId, 401, "User not found");
+    const listOfProblemIds = await Submission.findAll({
+      where: { userId },
+      attributes: ["problemId"],
+      group: ["problemId"],
+      raw: true,
+    });
+    // Extract only problem IDs from the results
+    const problemIds = listOfProblemIds.map((sub: any) => sub.problemId);
+    
+    return sendSuccess(res, 200, "Problems fetched", problemIds);
+  } catch (err) {
+    throw new ApiError(500, "Failed to fetch problems");
+  }
+}
 // View specific submission (only user or admin)
 export const getSubmissionById = async (req: Request, res: Response) => {
   try {
@@ -88,66 +154,53 @@ export const getProblemSubmissions = async (req: Request, res: Response) => {
     const submissions = await Submission.findAll({
       where: { problemId },
       order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: Problem,
+          as: "problem",
+          attributes: ["title"],
+        },
+        {
+          model: SubmissionTestcaseResult,
+          as: "testcaseResults",
+          attributes: ["runtime", "memory"],
+        },
+      ],
     });
-    return sendSuccess(res, 200, "Problem submissions fetched", submissions);
+    const formatted = submissions.map((sub: any) => {
+      // Aggregate runtime and memory (sum or max, here using max)
+      let runtime = null;
+      let memory = null;
+      if (sub.testcaseResults && sub.testcaseResults.length > 0) {
+        runtime = Math.max(...sub.testcaseResults.map((t: any) => t.runtime ?? 0));
+        memory = Math.max(...sub.testcaseResults.map((t: any) => t.memory ?? 0));
+      }
+      // Map verdict to UPPERCASE with underscores
+      let verdict = (sub.verdict || "Unknown").toUpperCase().replace(/ /g, "_");
+      // Map language to readable form
+      let language = sub.language;
+      if (langMap[sub.language]) {
+        language = langMap[sub.language];
+      }
+      
+      // Fallbacks
+      return {
+        id: sub.id,
+        problemId: sub.problemId,
+        problemTitle: sub.problem?.title || "",
+        language,
+        verdict,
+        createdAt: sub.createdAt,
+        runtime,
+        memory,
+      };
+    });
+    return sendSuccess(res, 200, "Problem submissions fetched", formatted);
   } catch (err){
     throw new ApiError(500, "Failed to fetch problem submissions");
   }
 };
 
-// export recent submissions [
-//   {
-//     id: "sub-1",
-//     problemId: "prob-1",
-//     problemTitle: "Two Sum",
-//     language: "Python",
-//     verdict: "ACCEPTED",
-//     createdAt: "2025-05-20T14:32:15.000Z",
-//     runtime: 42,
-//     memory: 8.2
-//   },
-//   {
-//     id: "sub-2",
-//     problemId: "prob-2",
-//     problemTitle: "Binary Tree Traversal",
-//     language: "JavaScript",
-//     verdict: "WRONG_ANSWER",
-//     createdAt: "2025-05-19T09:21:44.000Z",
-//     runtime: 67,
-//     memory: 12.8
-//   },
-//   {
-//     id: "sub-3",
-//     problemId: "prob-3",
-//     problemTitle: "Merge Sort Implementation",
-//     language: "C++",
-//     verdict: "TIME_LIMIT_EXCEEDED",
-//     createdAt: "2025-05-17T16:05:30.000Z",
-//     runtime: 2500,
-//     memory: 10.1
-//   },
-//   {
-//     id: "sub-4",
-//     problemId: "prob-4",
-//     problemTitle: "Dynamic Programming Challenge",
-//     language: "Java",
-//     verdict: "MEMORY_LIMIT_EXCEEDED",
-//     createdAt: "2025-05-15T11:47:22.000Z",
-//     runtime: 156,
-//     memory: 256.4
-//   },
-//   {
-//     id: "sub-5",
-//     problemId: "prob-5",
-//     problemTitle: "Graph Algorithm Problem",
-//     language: "Go",
-//     verdict: "RUNTIME_ERROR",
-//     createdAt: "2025-05-12T18:33:02.000Z",
-//     runtime: 88,
-//     memory: 14.7
-//   }
-// ];
-  
 export const getRecentSubmissions = async (req: Request, res: Response) => {
   try {
     const limit = Number(req.query.limit) || 10;

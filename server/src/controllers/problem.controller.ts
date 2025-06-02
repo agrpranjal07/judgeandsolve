@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Problem from "../models/problem.model.js";
 import { throwIf, sendSuccess } from "../utils/helper.js";
 import { ApiError } from "../utils/ApiError.js";
+import { Op, Sequelize } from "sequelize";
 
 
 // Create Problem (Admin only)
@@ -46,7 +47,6 @@ export const getProblems = async (req: Request, res: Response) => {
       ["Easy", "Medium", "Hard"].includes(difficulty as string)
     ) {
       where.difficulty = difficulty;
-      console.log("Difficulty filter applied");
     }
     const offset = (Number(page) - 1) * Number(limit);
     const { rows, count } = await Problem.findAndCountAll({
