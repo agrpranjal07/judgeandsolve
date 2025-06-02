@@ -24,7 +24,7 @@ export function Header() {
 
         {/* Main nav */}
         <nav className="hidden md:flex items-center gap-6">
-          {["problems", "leaderboard", "contests", "discuss"].map((path) => (
+          {["problems", "leaderboard"].map((path) => (
             <Link
               key={path}
               href={path === "leaderboard" ? "/stats/leaderboard" : `/${path}`}

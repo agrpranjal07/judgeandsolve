@@ -7,13 +7,15 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/_compone
 import { ArrowRight, Code, BarChart, Trophy, Clock } from "lucide-react";
 import { Badge } from "@/_components/ui/badge";
 import useAuthStore from "@/_store/auth";
+import { useToast } from "@/_hooks/use-toast";
+import api from "@/_services/api";
 
-// Mock data (you'll replace this with real API data later)
-const recentSubmissions = [
-  { id: 1, problem: "Two Sum", verdict: "ACCEPTED", language: "Python", time: "2 hours ago" },
-  { id: 2, problem: "Binary Tree Traversal", verdict: "WRONG_ANSWER", language: "JavaScript", time: "1 day ago" },
-  { id: 3, problem: "Merge Sort", verdict: "TIME_LIMIT_EXCEEDED", language: "C++", time: "3 days ago" },
-];
+// // Mock data (you'll replace this with real API data later)
+// const recentSubmissions = [
+//   { id: 1, problem: "Two Sum", verdict: "ACCEPTED", language: "Python", time: "2 hours ago" },
+//   { id: 2, problem: "Binary Tree Traversal", verdict: "WRONG_ANSWER", language: "JavaScript", time: "1 day ago" },
+//   { id: 3, problem: "Merge Sort", verdict: "TIME_LIMIT_EXCEEDED", language: "C++", time: "3 days ago" },
+// ];
 
 const getVerdictColor = (verdict: string) => {
   switch (verdict) {
@@ -27,7 +29,61 @@ const getVerdictColor = (verdict: string) => {
 export default function HomePage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
-  const user = useAuthStore((s) => s.user);
+  const {user, setUser} = useAuthStore();
+  const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userStats, setUserStats] = useState<any>(null);
+  const { toast } = useToast();
+  useEffect(() => {
+    if (!accessToken) return;
+    const fetchUser= async () => {
+          try {
+            const res = await api.get("/auth/me", {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            setUser(res.data.data);
+          } catch (err) {
+            console.error("Failed to fetch user:", err);}
+        };
+        fetchUser();
+      }, [accessToken, setUser]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!accessToken || !user?.username) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Fetch recent submissions
+        const submissionRes = await api.get("/recentSubmissions?limit=3&offset=0", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (submissionRes.data.data) {
+          setRecentSubmissions(submissionRes.data.data);
+        }
+
+        // Fetch user stats
+        const statsRes = await api.get(`/stats/user/${user.username}/`);
+        if (statsRes.data.data) {
+          setUserStats(statsRes.data.data);
+        }
+      } catch (err) {
+        console.error("Dashboard data fetch failed:", err);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [recentSubmissions,userStats,setUserStats,isLoading,setRecentSubmissions,accessToken, user, toast]);
 
   return (
     <div className="min-h-[calc(100vh-var(--header-height))] bg-gradient-to-br from-background to-muted/30">
@@ -143,7 +199,7 @@ export default function HomePage() {
                 icon={<Trophy className="text-violet-600" />}
                 title="Your Stats"
                 description=""
-                stats={{ solved: 32, acceptance: "68%", total: 61 }}
+                stats={userStats}
                 onAction={() => router.push("/me")}
               />
             </div>
@@ -201,7 +257,7 @@ function HomeCard({
   title: string;
   description?: string;
   tags?: string[];
-  stats?: { solved: number; acceptance: string; total: number };
+  stats?: { totalAccepted: number; accuracyRate: string; totalAttempted: number };
   list?: any[];
   actionText?: string;
   onAction: () => void;
@@ -224,18 +280,18 @@ function HomeCard({
           </div>
         )}
         {stats && (
-          <div className="space-y-2">
-            <div className="flex justify-between"><span>Problems Solved</span><strong>{stats.solved}</strong></div>
-            <div className="flex justify-between"><span>Acceptance Rate</span><strong>{stats.acceptance}</strong></div>
-            <div className="flex justify-between"><span>Total Submissions</span><strong>{stats.total}</strong></div>
-          </div>
-        )}
+          <>
+            <div className="flex justify-between"><span>Problems Attempted</span><strong>{stats.totalAttempted}</strong></div>
+            <div className="flex justify-between"><span>Acceptance Rate</span><strong>{stats.accuracyRate}%</strong></div>
+            <div className="flex justify-between"><span>Accepted Submissions</span><strong>{stats.totalAccepted}</strong></div>
+          </>
+        ) }
         {list && (
           <ul className="space-y-3">
             {list.map((s, i) => (
               <li key={i} className="flex items-center justify-between border-b border-border/30 pb-2">
                 <div>
-                  <p className="font-medium">{s.problem}</p>
+                  <p className="font-medium">{s.problemTitle}</p>
                   <div className="text-xs text-muted-foreground font-mono">{s.language} • {s.time}</div>
                 </div>
                 <Badge className={getVerdictColor(s.verdict)}>{s.verdict}</Badge>

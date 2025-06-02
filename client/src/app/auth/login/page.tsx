@@ -52,7 +52,6 @@ const LoginPage = () => {
       setAccessToken(accessToken);
 
       const { data:{data: userProfile} } = await api.get('/auth/me');
-      console.log(userProfile);
       setUser(userProfile);
 
       toast({

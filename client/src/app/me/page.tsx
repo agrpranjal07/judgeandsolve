@@ -11,7 +11,6 @@ import { CalendarDays, Code, CheckCircle, ListChecks, ArrowRight } from "lucide-
 import { UserStatsCard } from "@/_components/profile/UserStatsCard";
 import { SubmissionsTable } from "@/_components/profile/SubmissionTable";
 import { useToast } from "@/_hooks/use-toast";
-import { mockUserStats, mockSubmissions } from "@/_lib/mock-data";
 import { useAuthGuard } from "@/_hooks/useAuthGuard";
 import useAuthStore from "@/_store/auth";
 import api from "@/_services/api";
@@ -54,24 +53,62 @@ const ProfilePage = () => {
     }
   }, [user, setUser, userData, setUserData]);
 
-  // Mock stats and recent submissions
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (!userData) return;
+
+    // Fetch user stats
+    const fetchUserStats = async () => {
       try {
-        setUserStats(mockUserStats);
-        setRecentSubmissions(mockSubmissions);
+        const res = await api.get(`/stats/user/${userData.username}/`);
+        setUserStats(res.data.data);
       } catch (err) {
+        console.error("Failed to fetch user stats:", err);
         toast({
-          title: "Error loading profile",
-          description: "Something went wrong while loading stats",
+          title: "Error loading stats",
+          description: "Something went wrong while loading your stats",
+          variant: "destructive",
+        });
+      }
+      finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Fetch recent submissions
+    
+
+    fetchUserStats();
+  }, [userStats, setUserStats,toast, userData]);
+
+useEffect(() => {
+  if (!userData) return;
+
+  // Fetch recent submissions
+  const fetchRecentSubmissions = async () => {
+      try {
+        const res = await api.get(`/recentSubmissions?limit=10&offset=0/`);
+        if (!res.data || !res.data.data) {
+          setRecentSubmissions([]);
+          return;
+        }
+        // Filter 10 recent submissions by created at
+        const recentSubmissions = res.data.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setRecentSubmissions(recentSubmissions);
+      } catch (err) {
+        console.error("Failed to fetch recent submissions:", err);
+        toast({
+          title: "Error loading submissions",
+          description: "Something went wrong while loading your submissions",
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
       }
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [toast]);
+    };
+
+  fetchRecentSubmissions();
+}, [recentSubmissions, setRecentSubmissions, toast, userData]);
+
 
   const getInitials = (name?: string) => {
     return name ? name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) : "U";

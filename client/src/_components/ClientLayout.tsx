@@ -6,6 +6,7 @@ import useAuthStore from '@/_store/auth';
 import { ThemeProvider } from 'next-themes';
 import { ToastProvider, ToastViewport } from "@/_components/ui/toast";
 import { Header } from './Header';
+import Router from 'next/router';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const setAccessToken = useAuthStore(s => s.setAccessToken);
@@ -26,6 +27,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             withCredentials: true,
           });
           setUser(user);
+          Router.push('/');
         }
       } catch (err) {
         console.error('Auth init failed:', err);
