@@ -16,6 +16,7 @@ interface CodeEditorProps {
   language: string;
   setLanguage: (language: string) => void;
   onReset: () => void;
+  isReadOnly?: boolean;
 }
 
 const languages = [
@@ -36,6 +37,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   language,
   setLanguage,
   onReset,
+  isReadOnly = false,
 }) => {
   const { theme } = useTheme();
   const [isMonacoReady, setIsMonacoReady] = useState(false);
@@ -66,7 +68,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
               </SelectContent>
             </Select>
           </div>
-          <Button
+          {!isReadOnly && <Button
             variant="outline"
             size="sm"
             onClick={onReset}
@@ -74,7 +76,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           >
             <RotateCcw className="h-4 w-4" />
             Reset
-          </Button>
+          </Button>}
         </div>
       </CardHeader>
 
@@ -98,6 +100,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
                 lineNumbers: "on",
                 renderLineHighlight: "gutter",
                 padding: { top: 10 },
+                readOnly: isReadOnly,
               }}
             />
           )}

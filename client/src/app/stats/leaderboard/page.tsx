@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Trophy, Medal, Award } from "lucide-react";
 import api from '@/_services/api';
 import useAuthStore from '@/_store/auth';
+import { useAuthGuard } from '@/_hooks/useAuthGuard';
 
 interface LeaderboardUser {
   id: string;
@@ -18,60 +19,16 @@ interface LeaderboardUser {
   avgRuntime: number;
 }
 
-const mockLeaderboardData: LeaderboardUser[] = [
-  {
-    id: "1",
-    username: "codemaster",
-    weightedScore: 2847,
-    solvedCount: 245,
-    submissionsCount: 892,
-    avgRuntime: 45.2
-  },
-  {
-    id: "2",
-    username: "algorithmic_ace",
-    weightedScore: 2735,
-    solvedCount: 238,
-    submissionsCount: 756,
-    avgRuntime: 38.7
-  },
-  {
-    id: "3",
-    username: "speedcoder",
-    weightedScore: 2689,
-    solvedCount: 221,
-    submissionsCount: 634,
-    avgRuntime: 29.1
-  },
-  {
-    id: "4",
-    username: "debugger_pro",
-    weightedScore: 2556,
-    solvedCount: 198,
-    submissionsCount: 578,
-    avgRuntime: 52.3
-  },
-  {
-    id: "5",
-    username: "binary_ninja",
-    weightedScore: 2445,
-    solvedCount: 187,
-    submissionsCount: 512,
-    avgRuntime: 41.8
-  }
-];
-
-
 function LeaderboardPage() {
+  useAuthGuard();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user, setUser } = useAuthStore();
+  const { user: currentUser, setUser: setCurrentUser } = useAuthStore();
 
   useEffect(() => {
     // make API call
     const fetchLeaderboard = async () => {
       try {
-        // Simulate API call with mock data
         const res=await api.get("/stats/leaderboard")
         const data = res.data.data;
         // console.log("Fetched leaderboard data:", data);
@@ -146,7 +103,7 @@ function LeaderboardPage() {
             <div className="md:hidden space-y-4">
               {leaderboardData.map((user, index) => {
                 const rank = index + 1;
-                const isCurrentUser = user.username === user?.username;
+                const isCurrentUser = user.username === currentUser?.username;
                 
                 return (
                   <Card 
@@ -204,7 +161,7 @@ function LeaderboardPage() {
                 <TableBody>
                   {leaderboardData.map((user, index) => {
                     const rank = index + 1;
-                    const isCurrentUser = user.username === user?.username;
+                    const isCurrentUser = user.username === currentUser?.username;
                     
                     return (
                       <TableRow 

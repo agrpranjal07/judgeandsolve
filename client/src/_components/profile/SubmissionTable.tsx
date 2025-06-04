@@ -94,7 +94,7 @@ import {
                 <TableRow key={submission.id}>
                   <TableCell className="font-medium">
                     <Link 
-                      href={`/problems/${submission.problemId}`}
+                      href={`/submissions/${submission.id}`}
                       className="text-violet-600 dark:text-violet-400 hover:underline"
                     >
                       {submission.problemTitle}

@@ -67,6 +67,7 @@ export default function ProblemSolvePage() {
   const [submissionResults, setSubmissionResults] = useState<SubmissionResult | null>(null);
   const [aiReviewAvailable, setAiReviewAvailable] = useState(false);
   const [aiReview, setAiReview] = useState<string | null>(null);
+  const [codeRating, setCodeRating] = useState<number | null>(null);
   const [pastSubmissions, setPastSubmissions] = useState<PastSubmission[]>([]);
   const [showPastSubmissions, setShowPastSubmissions] = useState(false);
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -147,7 +148,9 @@ export default function ProblemSolvePage() {
       expectedOutput: tc.output,
     }));
     try {
-      const res = await api.post("/submissions/testcases", { problemId, language, code, testcases });
+      const res = await api.post("/submissions/testcases", { problemId, language, code, testcases },{
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       if (res.data.data.length !== 0) {
         const results = res.data.data.map((tc: any) => ({
           testcaseId: tc.testcaseId,
@@ -221,20 +224,15 @@ export default function ProblemSolvePage() {
       });
     }
       const aiReviewResponse = await api.post("/ai/review", {
-        problemId,code, language});
+        problemId,code, language},{
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
       if(aiReviewResponse.data.data) {
-        setAiReview(aiReviewResponse.data.data.review);
-      } else {
-      const mockReview = `AI Review for Submission ID ${submissionId}:
-- Overall structure is good.
-- Consider optimizing the loop in line 15.
-- Sample test cases are well handled.
-- Ensure edge cases are tested.
-- Suggest adding comments for better readability.`;
-      setAiReview(mockReview);
+        setAiReview(aiReviewResponse.data.data.reviewText);
+        setCodeRating(aiReviewResponse.data.data.rating);
       }
     } catch {
-      toast({ title: "Error", description: "Failed to fetch AI Review", variant: "destructive" });
+      toast({ title: "Failed to fetch AI Review", description: "Please try again after some time", variant: "destructive" });
     }
   };
 
@@ -295,6 +293,7 @@ export default function ProblemSolvePage() {
           {aiReview ? (
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md border border-blue-200 dark:border-blue-800">
               <h3 className="font-bold text-blue-700 dark:text-blue-300 mb-2">AI Review</h3>
+              <p className="mb-2">Rating: <Badge variant={codeRating && codeRating >= 4 ? "default" : "destructive"}>{codeRating || "N/A"}</Badge></p>
               <pre className="whitespace-pre-wrap text-sm">{aiReview}</pre>
             </div>
           ) : submissionResults ? (
