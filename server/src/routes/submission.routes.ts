@@ -8,6 +8,7 @@ import {
   getRecentSubmissions,
   getUserSolvedProblems,
   testSampleCode,
+  setSubmissionReviewNote,
 } from "../controllers/submission.controller.js";
 
 const submissionRouter = express.Router();
@@ -17,6 +18,7 @@ submissionRouter.use(authenticateJWT);
 submissionRouter.post("/submissions", submitCode);
 submissionRouter.get("/submissions", listUserSubmissions);
 submissionRouter.get("/submissions/:id", getSubmissionById);
+submissionRouter.post("/submissions/review/:id",setSubmissionReviewNote)
 submissionRouter.get("/problems/:problemId/submissions", isAdmin,getProblemSubmissions);
 submissionRouter.post("/submissions/testcases",testSampleCode );
 submissionRouter.get("/recentSubmissions", getRecentSubmissions);

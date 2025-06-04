@@ -16,6 +16,7 @@ import testcaseRouter from './routes/testcase.routes.js';
 import tagRouter from './routes/tag.routes.js';
 import submissionRouter from './routes/submission.routes.js';
 import statsRouter from './routes/stats.routes.js';
+import aiRouter from "./routes/ai.routes.js";
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/v1/', testcaseRouter);
 app.use('/api/v1', tagRouter);
 app.use('/api/v1', submissionRouter);
 app.use('/api/v1/stats', statsRouter);
+app.use("/api/v1/ai", aiRouter);
 
 // Health / Welcome
 app.get("/api/v1", (req, res) => {

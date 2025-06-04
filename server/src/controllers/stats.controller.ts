@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { Sequelize } from "sequelize";
 import User from "../models/user.model.js";
-import Submission from "../models/submission.model.js";
-import { successResponse } from "../utils/ApiResponse.js";
-import { throwIf } from "../utils/helper.js";
 import { sequelize } from "../config/database.js";
+import Submission from "../models/submission.model.js";
+import { throwIf } from "../utils/helper.js";
+import { successResponse } from "../utils/ApiResponse.js";
 
+// Re-use the same CASE for difficulty weight
 const difficultyWeightCase = `
   CASE
     WHEN p."difficulty" = 'Easy' THEN 1
@@ -23,43 +24,98 @@ export const getLeaderboard = async (
   try {
     const results: any[] = await sequelize.query(
       `
+      WITH user_first_accepted_submission AS (
+        SELECT
+            s."userId",
+            s."problemId",
+            MIN(s."createdAt") AS "firstAcceptedAt",
+            (
+              SELECT s_inner.id
+              FROM "submissions" s_inner
+              WHERE 
+                s_inner."userId" = s."userId" AND 
+                s_inner."problemId" = s."problemId" AND 
+                s_inner."verdict" = 'Accepted'
+              ORDER BY s_inner."createdAt" ASC
+              LIMIT 1
+            ) AS "firstAcceptedSubmissionId"
+        FROM "submissions" s
+        WHERE s."verdict" = 'Accepted'
+        GROUP BY s."userId", s."problemId"
+      ),
+
+      user_problem_weighted_score AS (
+        SELECT
+            ufas."userId",
+            ufas."problemId",
+            ufas."firstAcceptedAt",
+            ufas."firstAcceptedSubmissionId",
+            p."difficulty",
+            ${difficultyWeightCase} AS "difficultyWeight",
+            ar."createdAt" AS "firstReviewAt"
+        FROM user_first_accepted_submission ufas
+        JOIN "problems" p
+          ON ufas."problemId" = p."id"
+        LEFT JOIN "ai_reviews" ar
+          ON ar."userId" = ufas."userId"
+          AND ar."problemId" = ufas."problemId"
+      ),
+
+      user_overall_metrics AS (
+        SELECT
+            upws."userId",
+            SUM(
+              CASE
+                WHEN upws."firstReviewAt" IS NOT NULL
+                  AND upws."firstReviewAt" < upws."firstAcceptedAt"
+                THEN 0
+                ELSE upws."difficultyWeight"
+              END
+            ) AS "weightedScore",
+            COUNT(upws."firstAcceptedAt") AS "solvedCount",
+            SUM(str."runtime") AS "totalRuntimeForAccepted",
+            COUNT(str."id") AS "totalTestcasesForAccepted",
+            (
+              SELECT COUNT(*)
+              FROM "submissions" s_all
+              WHERE s_all."userId" = upws."userId"
+            ) AS "totalSubmissions"
+        FROM user_problem_weighted_score upws
+        LEFT JOIN "submission_testcase_results" str
+          ON str."submissionId" = upws."firstAcceptedSubmissionId"
+        GROUP BY upws."userId"
+      )
+
       SELECT
-        s."userId",
-        SUM(
-          ${difficultyWeightCase}
-        ) AS "weightedScore",
-        COUNT(DISTINCT s."problemId") AS "solvedCount",
-        COUNT(*) AS "submissionsCount",
-        AVG(str."runtime") AS "avgRuntime"
-      FROM "submissions" s
-      JOIN "problems" p ON s."problemId" = p."id"
-      LEFT JOIN "submission_testcase_results" str ON str."submissionId" = s."id"
-      WHERE s."verdict" = 'Accepted'
-      GROUP BY s."userId"
-      ORDER BY "weightedScore" DESC, "submissionsCount" ASC, "avgRuntime" ASC
+        u.id AS "userId",
+        u.username,
+        uom."weightedScore",
+        uom."solvedCount",
+        uom."totalSubmissions",
+        COALESCE(
+          uom."totalRuntimeForAccepted" / NULLIF(uom."totalTestcasesForAccepted", 0),
+          0
+        ) AS "avgRuntime"
+      FROM "users" u
+      JOIN user_overall_metrics uom
+        ON u.id = uom."userId"
+      ORDER BY
+        uom."weightedScore" DESC,
+        uom."totalSubmissions" ASC,
+        "avgRuntime" ASC
       LIMIT 50;
       `,
-      {
-        type: 'SELECT',
-      }
+      { type: "SELECT" }
     );
 
-    const leaderboard = await Promise.all(
-      results.map(async (row) => {
-        const user = await User.findByPk(row.userId, {
-          attributes: ["username"],
-        });
-
-        return {
-          userId: row.userId,
-          username: user?.username ?? "Unknown",
-          weightedScore: parseFloat(row.weightedScore),
-          solvedCount: parseInt(row.solvedCount, 10),
-          submissionsCount: parseInt(row.submissionsCount, 10),
-          avgRuntime: parseFloat(row.avgRuntime || 0).toFixed(2),
-        };
-      })
-    );
+    const leaderboard = results.map((row) => ({
+      userId: row.userId,
+      username: row.username ?? "Unknown",
+      weightedScore: parseFloat(row.weightedScore),
+      solvedCount: parseInt(row.solvedCount, 10),
+      submissionsCount: parseInt(row.totalSubmissions, 10),
+      avgRuntime: parseFloat(row.avgRuntime || 0).toFixed(2),
+    }));
 
     return successResponse(res, {
       statusCode: 200,
@@ -70,6 +126,7 @@ export const getLeaderboard = async (
     next(err);
   }
 };
+
 
 export const getUserStats = async (
   req: Request,

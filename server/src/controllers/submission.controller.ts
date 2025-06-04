@@ -82,7 +82,10 @@ export const listUserSubmissions = async (req: Request, res: Response) => {
   try {
     const userId= (req.user as any)?.id;
     if(!userId) throw new Error("User not found");
-    const submissions = await Submission.findAll({
+    const { limit, offset } = req.query;
+    let submissions: Submission[] = [];
+    if(!limit || !offset) {
+    submissions = await Submission.findAll({
       where: { userId },
       order: [["createdAt", "DESC"]],
       include: [
@@ -98,7 +101,57 @@ export const listUserSubmissions = async (req: Request, res: Response) => {
         },
       ],
     });
-    return sendSuccess(res, 200, "User submissions fetched", submissions);
+  }
+  else {
+    submissions = await Submission.findAll({
+      where: { userId },
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string),
+      order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: Problem,
+          as: "problem",
+          attributes: ["title"],
+        },
+        {
+          model: SubmissionTestcaseResult,
+          as: "testcaseResults",
+          attributes: ["runtime", "memory"],
+        },
+      ],
+    });
+  }
+
+      const formatted = submissions.map((sub: any) => {
+      // Aggregate runtime and memory (sum or max, here using max)
+      let runtime = null;
+      let memory = null;
+      if (sub.testcaseResults && sub.testcaseResults.length > 0) {
+        runtime = Math.max(...sub.testcaseResults.map((t: any) => t.runtime ?? 0));
+        memory = Math.max(...sub.testcaseResults.map((t: any) => t.memory ?? 0));
+      }
+      // Map verdict to UPPERCASE with underscores
+      let verdict = (sub.verdict || "Unknown").toUpperCase().replace(/ /g, "_");
+      // Map language to readable form
+      let language = sub.language;
+      if (langMap[sub.language]) {
+        language = langMap[sub.language];
+      }
+      
+      // Fallbacks
+      return {
+        id: sub.id,
+        problemId: sub.problemId,
+        problemTitle: sub.problem?.title || "",
+        language,
+        verdict,
+        createdAt: sub.createdAt,
+        runtime,
+        memory,
+      };
+    });
+    return sendSuccess(res, 200, "User submissions fetched", formatted);
   } catch (err){
     throw new ApiError(500, "Failed to fetch user submissions");
   }
@@ -147,6 +200,36 @@ export const getSubmissionById = async (req: Request, res: Response) => {
   }
 };
 
+export const setSubmissionReviewNote = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reviewNote } = req.body;
+    const userId = (req.user as any)?.id;
+
+    throwIf(!id, 400, "Submission ID is required");
+    throwIf(!reviewNote || typeof reviewNote !== "string", 400, "Review note is required");
+    throwIf(!userId, 401, "User not authenticated");
+
+    const submission = await Submission.findByPk(id);
+    throwIf(!submission, 404, "Submission not found");
+  if(submission){
+    const isOwner = submission.userId === userId;
+
+    throwIf(!isOwner && !isAdmin(req.user), 403, "Not authorized to update review");
+
+    submission.reviewNote = reviewNote;
+    await submission.save();
+
+    return sendSuccess(res, 200, "Review note updated successfully", {
+      id: submission.id,
+      reviewNote: submission.reviewNote
+    });
+  }
+  } catch (err) {
+    console.error("Error setting review note:", err);
+    throw new ApiError(500, "Failed to set submission review");
+  }
+}
 // View all submissions for a problem (Admin only)
 export const getProblemSubmissions = async (req: Request, res: Response) => {
   try {
