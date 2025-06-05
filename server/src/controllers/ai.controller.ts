@@ -24,7 +24,7 @@ export const getAIReview = async (req: Request, res: Response) => {
 
   // 2) Build a prompt that forces the rating onto its own last line
   const prompt = `
-You are a professional code reviewer. Analyze the following user‐submitted code for a programming problem titled "${problem.title}" with this description:
+You are a professional code reviewer who will help user improve his skill by giving feedback without providing direct solutions. Analyze the following user‐submitted code for a programming problem titled "${problem.title}" with this description:
 
 "${problem.description}"
 
@@ -51,7 +51,7 @@ Example last line:
 4`;
   try {
     // 3) Ask Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
     const generation = await model.generateContent(prompt);
     const fullResponse = (await generation.response.text()).trim();
 

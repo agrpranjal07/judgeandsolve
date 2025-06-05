@@ -10,6 +10,7 @@ import useAuthStore from "@/_store/auth";
 import api from "@/_services/api";
 import { Badge } from "@/_components/ui/badge";
 import { SubmissionsTable } from "@/_components/profile/SubmissionTable";
+import ReactMarkdown from "react-markdown";
 
 type Problem = {
   id: string;
@@ -294,7 +295,9 @@ export default function ProblemSolvePage() {
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md border border-blue-200 dark:border-blue-800">
               <h3 className="font-bold text-blue-700 dark:text-blue-300 mb-2">AI Review</h3>
               <p className="mb-2">Rating: <Badge variant={codeRating && codeRating >= 4 ? "default" : "destructive"}>{codeRating || "N/A"}</Badge></p>
-              <pre className="whitespace-pre-wrap text-sm">{aiReview}</pre>
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown>{aiReview}</ReactMarkdown>
+              </div>
             </div>
           ) : submissionResults ? (
             <div className={`space-y-3 ${submissionResults.verdict === "Accepted" ?`bg-green-50 dark:bg-green-950 p-4 rounded-md border border-green-200 dark:border-green-800`: `bg-red-50 dark:bg-red-950 p-4 rounded-md border border-red-200 dark:border-red-800`} `}>
