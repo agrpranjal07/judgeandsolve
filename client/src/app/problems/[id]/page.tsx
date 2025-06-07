@@ -265,7 +265,7 @@ export default function ProblemSolvePage() {
                 {tag}
               </Badge>
             ))}
-          <pre className="whitespace-pre-wrap text-sm">{problem.description}</pre>
+          <ReactMarkdown>{problem.description}</ReactMarkdown>
 
           </div>
 

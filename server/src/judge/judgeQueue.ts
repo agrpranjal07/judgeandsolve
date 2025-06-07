@@ -4,11 +4,21 @@ import Submission from "../models/submission.model.js";
 import SubmissionTestcaseResult from "../models/submission_testcase_result.model.js";
 import Testcase from "../models/testcase.model.js";
 
+// Use REDIS_URL if available, else fallback to individual env vars
+const redisUrl = process.env.REDIS_URL;
+const redisOptions = redisUrl
+  ? { connection: { url: redisUrl } }
+  : {
+      connection: {
+        host: process.env.REDIS_HOST || "localhost",
+        port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+        username: process.env.REDIS_USERNAME || undefined,
+        password: process.env.REDIS_PASSWORD || undefined,
+      },
+    };
 
 // Define the queue for processing judge jobs
-const judgeQueue = new Queue("judge", {
-  connection: { host: "redis", port: 6379 },
-});
+const judgeQueue = new Queue("judge", redisOptions);
 import { sequelize } from "../config/database.js"; // If you want to use transactions
 
 const judgeWorker = new Worker(
@@ -70,7 +80,7 @@ const judgeWorker = new Worker(
     }
   },
   {
-    connection: { host: "redis", port: 6379 },
+    ...redisOptions,
     concurrency: 10,  // Process up to 10 jobs concurrently
     limiter: {
       max: 10,  // Max jobs per second
