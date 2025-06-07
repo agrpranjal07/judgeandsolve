@@ -17,6 +17,7 @@ benchmarks/graphs
 
 # Environment variables
 .env
+.env*
 
 # Misc
 *.pem

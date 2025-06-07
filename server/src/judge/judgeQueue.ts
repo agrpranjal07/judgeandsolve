@@ -7,7 +7,7 @@ import Testcase from "../models/testcase.model.js";
 
 // Define the queue for processing judge jobs
 const judgeQueue = new Queue("judge", {
-  connection: { host: "localhost", port: 6379 },
+  connection: { host: "redis", port: 6379 },
 });
 import { sequelize } from "../config/database.js"; // If you want to use transactions
 
@@ -70,7 +70,7 @@ const judgeWorker = new Worker(
     }
   },
   {
-    connection: { host: "localhost", port: 6379 },
+    connection: { host: "redis", port: 6379 },
     concurrency: 10,  // Process up to 10 jobs concurrently
     limiter: {
       max: 10,  // Max jobs per second

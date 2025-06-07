@@ -6,6 +6,7 @@ import ProblemTag from "./problem_tag.model.js";
 import Testcase from "./testcase.model.js";
 import Submission from "./submission.model.js";
 import SubmissionTestcaseResult from "./submission_testcase_result.model.js";
+import AIReview from "./ai_review.model.js";
 
 // Export all models for use elsewhere
 export {
@@ -17,4 +18,5 @@ export {
   Testcase,
   Submission,
   SubmissionTestcaseResult,
+  AIReview,
 };

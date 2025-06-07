@@ -191,7 +191,7 @@ export default function HomePage() {
               <HomeCard
                 icon={<Clock className="text-violet-600" />}
                 title="Recent Submissions"
-                description="Your latest attempts:"
+                description={recentSubmissions.length > 0 ? `Your latest attempts:` : "No recent submissions."}
                 list={recentSubmissions}
                 onAction={() => router.push("/submissions")}
               />

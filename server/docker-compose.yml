@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7
+    container_name: redis_server
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./
+    container_name: judge_server
+    ports:
+      - "4000:4000"
+    depends_on:
+      - redis
+    env_file:
+      - .env

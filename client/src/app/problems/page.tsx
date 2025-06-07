@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/_components/ui/card";
 import { Skeleton } from "@/_components/ui/skeleton";
@@ -9,10 +9,8 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent,
 } from "@/_components/ui/tabs";
 import { ProblemCard } from "@/_components/problems/ProblemCard";
-import { DifficultyBadge } from "@/_components/problems/DifficultyBadge";
 import useAuthStore from "@/_store/auth";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import api from "@/_services/api";
@@ -24,7 +22,8 @@ type Problem = {
   difficulty: "Easy" | "Medium" | "Hard";
   tags: string[];
 };
-function Problems() {
+
+function ProblemsPageContent() {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [solvedProblems, setSolvedProblems] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -220,4 +219,10 @@ function Problems() {
   );
 }
 
-export default Problems;
+export default function ProblemsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProblemsPageContent />
+    </Suspense>
+  );
+}
