@@ -11,6 +11,8 @@ import api from "@/_services/api";
 import { Badge } from "@/_components/ui/badge";
 import { SubmissionsTable } from "@/_components/profile/SubmissionTable";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 type Problem = {
   id: string;
@@ -258,15 +260,43 @@ export default function ProblemSolvePage() {
               {problem.difficulty}
             </Badge>
           </div>
-            {/* Tags and Description */}
+          {/* Tags and Description */}
           <div className="flex flex-wrap gap-2">
             {problem.tags?.map((tag) => (
-              <Badge key={tag} className="bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+              <Badge
+                key={tag}
+                className="bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              >
                 {tag}
               </Badge>
             ))}
-          <ReactMarkdown>{problem.description}</ReactMarkdown>
-
+          </div>
+          <div className="prose dark:prose-invert max-w-none">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+              components={{
+                code({ node, inline, className, children, ...props }: any) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  return !props.inline && match ? (
+                    <pre className="bg-gray-800 text-white p-4 rounded-md overflow-auto">
+                      <code className={className} {...props}>
+                        {String(children).replace(/\n$/, "")}
+                      </code>
+                    </pre>
+                  ) : (
+                    <code
+                      className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-sm"
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  );
+                },
+              }}
+            >
+              {problem.description}
+            </ReactMarkdown>
           </div>
 
           <div className="space-y-4">

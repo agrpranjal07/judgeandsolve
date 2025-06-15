@@ -21,3 +21,5 @@ benchmarks/graphs
 
 # Misc
 *.pem
+
+dist
