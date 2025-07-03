@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7
+    container_name: redis_server
+    ports:
+      - "127.0.0.1:6379:6379"  # Only bind to localhost for security
+    networks:
+      - judge-network
+    restart: unless-stopped
+
+  judge-service:
+    image: 471112932256.dkr.ecr.ap-south-1.amazonaws.com/judgeandsolve-judge:latest
+    container_name: judge_service
+    ports:
+      - "127.0.0.1:4001:4001"  # Only bind to localhost
+    environment:
+      - PORT=4001
+    networks:
+      - judge-network
+    restart: unless-stopped
+
+  backend:
+    image: 471112932256.dkr.ecr.ap-south-1.amazonaws.com/judgeandsolve-server:latest
+    container_name: judge_server
+    ports:
+      - "127.0.0.1:4000:4000"  # Only bind to localhost
+    depends_on:
+      - redis
+      - judge-service
+    env_file:
+      - ./server/.env
+    environment:
+      - JUDGE_SERVICE_URL=http://judge-service:4001
+      - CLIENT_URL=https://www.judgeandsolve.me
+    networks:
+      - judge-network
+    restart: unless-stopped
+
+networks:
+  judge-network:
+    driver: bridge
