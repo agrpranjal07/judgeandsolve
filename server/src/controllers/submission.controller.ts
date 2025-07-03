@@ -7,8 +7,14 @@ import SubmissionTestcaseResult from "../models/submission_testcase_result.model
 import { ApiError } from "../utils/ApiError.js";
 import langMap from "../config/languageMap.js";
 import { runJudgeJob } from "../judge/judgeRunner.js";
+import { canPerform } from "../policies.js";
 
-const isAdmin = (user: any) => user && user.usertype === "Admin";
+// Extend Express Request type for loadedResource
+declare module 'express-serve-static-core' {
+  interface Request {
+    loadedResource?: any;
+  }
+}
 
 // Submit code
 export const submitCode = async (req: Request, res: Response) => {
@@ -38,6 +44,9 @@ export const submitCode = async (req: Request, res: Response) => {
     });
     return sendSuccess(res, 201, "Submission created", submission);
   } catch (err){
+    if (err instanceof ApiError) {
+      throw err;
+    }
     throw new ApiError(500, "Failed to submit code");
   }
 };
@@ -183,19 +192,23 @@ export const getSubmissionById = async (req: Request, res: Response) => {
     throwIf(!submission, 404, "Submission not found");
     const userId= (req.user as any)?.id;
     if(!userId) throw new ApiError(401, "User not found");
-    throwIf(
-      submission?.userId !== userId && !isAdmin(req.user),
-      403,
-      "Not authorized to view this submission"
-    );
+    
+    const user = req.user as { id: string; usertype: string };
+    const canView = canPerform(user, 'submission', submission, 'can_view');
+    throwIf(!canView, 403, "Not authorized to view this submission");
+    
     const testcaseResults = await SubmissionTestcaseResult.findAll({
       where: { submissionId: id },
     });
     return sendSuccess(res, 200, "Submission fetched", {
-      ...submission,
+      ...submission!.toJSON(),
       testcaseResults,
     });
-  } catch (err){
+  } catch (err) {
+    // Preserve the original error if it's an ApiError
+    if (err instanceof ApiError) {
+      throw err;
+    }
     throw new ApiError(500, "Failed to fetch submission");
   }
 };
@@ -213,9 +226,9 @@ export const setSubmissionReviewNote = async (req: Request, res: Response) => {
     const submission = await Submission.findByPk(id);
     throwIf(!submission, 404, "Submission not found");
   if(submission){
-    const isOwner = submission.userId === userId;
-
-    throwIf(!isOwner && !isAdmin(req.user), 403, "Not authorized to update review");
+    const user = req.user as { id: string; usertype: string };
+    const canEdit = canPerform(user, 'submission', submission, 'can_edit');
+    throwIf(!canEdit, 403, "Not authorized to update review");
 
     submission.reviewNote = reviewNote;
     await submission.save();
@@ -230,12 +243,23 @@ export const setSubmissionReviewNote = async (req: Request, res: Response) => {
     throw new ApiError(500, "Failed to set submission review");
   }
 }
-// View all submissions for a problem (Admin only)
+// View all submissions for a problem (with proper authorization)
 export const getProblemSubmissions = async (req: Request, res: Response) => {
   try {
     const { problemId } = req.params;
+    const user = req.user as { id: string; usertype: string };
+    
+    // Build query conditions based on user permissions
+    const whereConditions: any = { problemId };
+    
+    // If user is not Admin or Moderator, only show their own submissions
+    // This filtering is still needed since authorization only determines if they can access the endpoint
+    if (user.usertype !== 'Admin' && user.usertype !== 'Moderator') {
+      whereConditions.userId = user.id;
+    }
+    
     const submissions = await Submission.findAll({
-      where: { problemId },
+      where: whereConditions,
       order: [["createdAt", "DESC"]],
       include: [
         {
@@ -250,6 +274,7 @@ export const getProblemSubmissions = async (req: Request, res: Response) => {
         },
       ],
     });
+    
     const formatted = submissions.map((sub: any) => {
       // Aggregate runtime and memory (sum or max, here using max)
       let runtime = null;
@@ -279,7 +304,11 @@ export const getProblemSubmissions = async (req: Request, res: Response) => {
       };
     });
     return sendSuccess(res, 200, "Problem submissions fetched", formatted);
-  } catch (err){
+  } catch (err) {
+    // Preserve the original error if it's an ApiError
+    if (err instanceof ApiError) {
+      throw err;
+    }
     throw new ApiError(500, "Failed to fetch problem submissions");
   }
 };

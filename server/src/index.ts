@@ -29,6 +29,12 @@ app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(passport.initialize());
 
+
+// Health / Welcome
+app.get("/api/v1", (req, res) => {
+  res.send("Welcome to the API of JudgeAndSolve");
+});
+
 // API Routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/problems", problemRouter);
@@ -38,10 +44,6 @@ app.use('/api/v1', submissionRouter);
 app.use('/api/v1/stats', statsRouter);
 app.use("/api/v1/ai", aiRouter);
 
-// Health / Welcome
-app.get("/api/v1", (req, res) => {
-  res.send("Welcome to the API of JudgeAndSolve");
-});
 
 // 404 handler
 app.use((req, res, next) => {
@@ -50,6 +52,9 @@ app.use((req, res, next) => {
 
 // Global error handler
 app.use(errorHandler);
+
+// Export app for testing
+export default app;
 
 // Start server
 const startServer = async () => {
@@ -68,4 +73,8 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-startServer();
+
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}

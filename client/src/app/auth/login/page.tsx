@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
@@ -20,12 +21,14 @@ import SocialAuthButton from '@/_components/SocialAuthButton';
 import { useToast } from '@/_hooks/use-toast';
 import useFormValidation from '@/_hooks/useFormValidation';
 import { useAuth } from '@/_hooks/useAuth';
+import { useState } from "react";
 
 const LoginPage = () => {
   const router = useRouter();
   const { toast } = useToast();
 
   const { setAccessToken, setUser } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginSchema = z.object({
     email: z.string().email('Invalid email address'),
@@ -131,16 +134,27 @@ const LoginPage = () => {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
               {validationErrors?.find(error => error.path[0] === 'password') && (
                 <p className="text-red-500 text-sm mt-1">
                   {validationErrors.find(error => error.path[0] === 'password')?.message}

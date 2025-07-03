@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { z, ZodError } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
 
 import User from "../models/user.model.js";
 import Token from "../models/token.model.js";
@@ -113,11 +114,18 @@ export const logout = async (req: Request, res: Response) => {
 };
 
 export const getProfile = async (req: Request, res: Response) => {
-  const username = req.params.username;
+  const usernameOrId = req.params.username;
+
   const user = await User.findOne({
-    where: { username },
+    where: {
+      [Op.or]: [
+        { username: usernameOrId },
+        { id: usernameOrId }
+      ]
+    },
     attributes: ["id", "username", "usertype", "createdAt"],
   });
+
   throwIf(!user, 404, "User not found");
 
   return sendSuccess(res, 200, "Profile fetched", user);

@@ -21,6 +21,7 @@ type Problem = {
   difficulty: "Easy" | "Medium" | "Hard";
   sampleInput: string;
   sampleOutput: string;
+  createdBy: string;
   tags: string[];
 };
 
@@ -85,9 +86,17 @@ export default function ProblemSolvePage() {
           api.get(`/problems/${problemId}/testcases/public`),
           api.get(`/problems/${problemId}/tags`),
         ]);
+        let problemData= problemRes.data.data;
+        const creatorId= problemData.createdBy;
+        const creatorRes = await api.get(`/auth/profile/${creatorId}`)
+        if (creatorRes.data.data) {
+          problemData.createdBy = creatorRes.data.data.username || "Unknown";
+        } else {
+          problemData.createdBy = "Unknown";
+        }
         // Set problem first
         setProblem({
-          ...problemRes.data.data,
+          ...problemData,
           tags: tagsRes.data.data.map((tag: { id: string; name: string }) => tag.name),
         });
         if (testcaseRes.data.data.length !== 0) {
@@ -119,7 +128,6 @@ export default function ProblemSolvePage() {
         const res = await api.get(`/problems/${problemId}/submissions`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-
         if (res.data.data) {
           setPastSubmissions(res.data.data);
           }
@@ -193,21 +201,20 @@ export default function ProblemSolvePage() {
       try {
         const res = await api.get(`/submissions/${submissionId}`);
         const submission = res.data.data;
-
         setSubmissionResults({
-          status: submission.dataValues.status,
-          verdict: submission.dataValues.verdict,
+          status: submission.status,
+          verdict: submission.verdict,
           results: submission.testcaseResults,
         });
 
         const passedCount = submission.testcaseResults.filter((t: any) => t.passed).length;
         const failed = submission.testcaseResults.length - passedCount;
 
-        if (submission.dataValues.verdict === "Accepted" || failed >= 2) {
+        if (submission.verdict === "Accepted" || failed >= 2) {
           setAiReviewAvailable(true);
         }
 
-        if (submission.dataValues.status === "Completed") clearInterval(interval);
+        if (submission.status === "Completed") clearInterval(interval);
       } catch (err) {
         clearInterval(interval);
         console.error("Error polling submission status", err);
@@ -259,6 +266,9 @@ export default function ProblemSolvePage() {
             >
               {problem.difficulty}
             </Badge>
+          </div>
+          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+            <span>Created by: {problem.createdBy.toLowerCase()}</span>
           </div>
           {/* Tags and Description */}
           <div className="flex flex-wrap gap-2">

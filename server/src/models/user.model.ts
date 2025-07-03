@@ -8,7 +8,7 @@ interface UserAttributes {
   email: string;
   githubId?: string;
   password?: string;
-  usertype: "Admin" | "User";
+  usertype: "Admin" | "Moderator" | "User";
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,7 +25,7 @@ class User
   public email!: string;
   public githubId?: string;
   public password?: string;
-  public usertype!: "Admin" | "User";
+  public usertype!: "Admin" | "Moderator" | "User";
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -68,7 +68,7 @@ User.init(
       allowNull: true, // Allow null for users who sign up with OAuth
     },
     usertype: {
-      type: DataTypes.ENUM("Admin", "User"),
+      type: DataTypes.ENUM("Admin", "Moderator", "User"),
       allowNull: false,
       defaultValue: "User",
     },

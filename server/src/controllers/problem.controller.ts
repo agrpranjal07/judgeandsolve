@@ -73,6 +73,9 @@ export const getProblemById = async (req: Request, res: Response) => {
     throwIf(!problem, 404, "Problem not found");
     return sendSuccess(res, 200, "Problem fetched", problem);
   } catch (err) {
+    if (err instanceof ApiError) {
+      throw err;
+    }
     throw new ApiError(500, "Failed to fetch problem");
   }
 };

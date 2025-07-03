@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateJWT, isAdmin } from "../middleware/auth.middleware.js";
+import { authenticateJWT } from "../middleware/auth.middleware.js";
 import {
   submitCode,
   listUserSubmissions,
@@ -18,9 +18,9 @@ submissionRouter.use(authenticateJWT);
 submissionRouter.post("/submissions", submitCode);
 submissionRouter.get("/submissions", listUserSubmissions);
 submissionRouter.get("/submissions/:id", getSubmissionById);
-submissionRouter.post("/submissions/review/:id",setSubmissionReviewNote)
-submissionRouter.get("/problems/:problemId/submissions", isAdmin,getProblemSubmissions);
-submissionRouter.post("/submissions/testcases",testSampleCode );
+submissionRouter.post("/submissions/review/:id", setSubmissionReviewNote);
+submissionRouter.get("/problems/:problemId/submissions", getProblemSubmissions);
+submissionRouter.post("/submissions/testcases", testSampleCode);
 submissionRouter.get("/recentSubmissions", getRecentSubmissions);
-submissionRouter.get("/users/solved-problems",getUserSolvedProblems)
+submissionRouter.get("/users/solved-problems", getUserSolvedProblems);
 export default submissionRouter; 

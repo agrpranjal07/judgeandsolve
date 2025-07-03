@@ -23,15 +23,26 @@ const useFormValidation = <T>(
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    // Clear validation errors for the changed field
-    if (validationErrors) {
-      setValidationErrors(
-        validationErrors.filter((error) => error.path[0] !== name)
+    const updatedForm = { ...formData, [name]: value };
+    setFormData(updatedForm);
+
+    // Validate the single field on change
+    try {
+      if (validationSchema instanceof z.ZodObject) {
+        validationSchema.pick({ [name]: true }).parse({ [name]: value });
+      }
+      // Remove error for this field if valid
+      setValidationErrors((prev) =>
+        prev ? prev.filter((err) => err.path[0] !== name) : null
       );
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Remove old error for this field and add new one
+        setValidationErrors((prev) => [
+          ...(prev ? prev.filter((err) => err.path[0] !== name) : []),
+          ...error.errors,
+        ]);
+      }
     }
   };
 
@@ -50,16 +61,11 @@ const useFormValidation = <T>(
     } catch (error) {
       if (error instanceof z.ZodError) {
         setValidationErrors(error.errors);
-        // You might also want to display a toast here for validation errors
-        // using the useToast hook in the component that uses this hook.
         toast({
           title: 'Validation Error',
           description: error.errors.map((error) => error.message).join(', '),
         });
       } else {
-        // Handle other potential errors from the submitCallback
-        console.error("Submission error:", error);
-        // Display a generic error toast here or let the component handle it.
         toast({
           title: 'Error',
           description: 'An unexpected error occurred',

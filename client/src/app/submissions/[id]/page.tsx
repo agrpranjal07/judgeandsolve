@@ -67,8 +67,9 @@ export default function SubmissionDetailPage() {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
         });
         if (!res.data?.data) throw new Error("Not found");
+        
         const data = res.data.data;
-        const sub = data.dataValues as Submission;
+        const sub = data as Submission;
         setSubmission(sub);
         setReviewNote(sub.reviewNote || "");
         setTestcaseResults(data.testcaseResults || []);
@@ -93,8 +94,7 @@ export default function SubmissionDetailPage() {
       }
     };
     if (params.id) fetchSubmission();
-    // eslint-disable-next-line
-  }, [params.id]);
+  }, [params.id, accessToken]);
 
   // Verdict badge/icon helpers
   const getVerdictIcon = (verdict: string) => {
