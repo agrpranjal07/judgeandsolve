@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/_components/ui/avatar";
 import { Badge } from "@/_components/ui/badge";
@@ -10,200 +9,168 @@ import { Button } from "@/_components/ui/button";
 import { CalendarDays, Code, CheckCircle, ListChecks, ArrowRight } from "lucide-react";
 import { UserStatsCard } from "@/_components/profile/UserStatsCard";
 import { SubmissionsTable } from "@/_components/profile/SubmissionTable";
-import { useToast } from "@/_hooks/use-toast";
-import { useAuthGuard } from "@/_hooks/useAuthGuard";
-import useAuthStore from "@/_store/auth";
-import api from "@/_services/api";
-
-interface UserData {
-  username: string;
-  email: string;
-  usertype: string;
-  createdAt: Date;
-}
+import { useProfile } from "@/_hooks/useProfile";
 
 const ProfilePage = () => {
-  useAuthGuard();
   const router = useRouter();
-  const { toast } = useToast();
+  const { userData, userStats, recentSubmissions, isLoading } = useProfile();
 
-  const { user, setUser } = useAuthStore();
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [userStats, setUserStats] = useState<any>(null);
-  const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch user info if not present in store
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/auth/me");
-        setUser(res.data.data);
-        setUserData(res.data.data);
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-        setUser(null);
-      }
-    };
-
-    if (!user || !userData) {
-      fetchUser();
-    } else {
-      setUserData(user);
-    }
-  }, [user, setUser, userData, setUserData]);
-
-  useEffect(() => {
-    if (!userData) return;
-
-    // Fetch user stats
-    const fetchUserStats = async () => {
-      try {
-        const res = await api.get(`/stats/user/${userData.username}/`);
-        setUserStats(res.data.data);
-      } catch (err) {
-        console.error("Failed to fetch user stats:", err);
-        toast({
-          title: "Error loading stats",
-          description: "Something went wrong while loading your stats",
-          variant: "destructive",
-        });
-      }
-      finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Fetch recent submissions
-    
-
-    fetchUserStats();
-  }, [userStats, setUserStats,toast, userData]);
-
-useEffect(() => {
-  if (!userData) return;
-
-  // Fetch recent submissions
-  const fetchRecentSubmissions = async () => {
-      try {
-        const res = await api.get(`/recentSubmissions?limit=10&offset=0/`);
-        if (!res.data || !res.data.data) {
-          setRecentSubmissions([]);
-          return;
-        }
-        // Filter 10 recent submissions by created at
-        const recentSubmissions = res.data.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setRecentSubmissions(recentSubmissions);
-      } catch (err) {
-        console.error("Failed to fetch recent submissions:", err);
-        toast({
-          title: "Error loading submissions",
-          description: "Something went wrong while loading your submissions",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-  fetchRecentSubmissions();
-}, [recentSubmissions, setRecentSubmissions, toast, userData]);
-
-
-  const getInitials = (name?: string) => {
-    return name ? name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) : "U";
-  };
+  if (isLoading || !userData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
+        <div className="container mx-auto py-8 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profile Card Skeleton */}
+              <div className="lg:col-span-1">
+                <Card>
+                  <CardHeader className="text-center">
+                    <Skeleton className="h-24 w-24 rounded-full mx-auto mb-4" />
+                    <Skeleton className="h-8 w-48 mx-auto mb-2" />
+                    <Skeleton className="h-4 w-32 mx-auto" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-center space-x-2">
+                        <Skeleton className="h-4 w-4" />
+                        <Skeleton className="h-4 flex-1" />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Stats Skeleton */}
+              <div className="lg:col-span-2 space-y-6">
+                <Skeleton className="h-8 w-48" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Card key={i}>
+                      <CardHeader>
+                        <Skeleton className="h-6 w-32" />
+                      </CardHeader>
+                      <CardContent>
+                        <Skeleton className="h-8 w-16" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Profile Card */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader className="text-center">
+                  <Avatar className="h-24 w-24 mx-auto mb-4">
+                    <AvatarImage src="" />
+                    <AvatarFallback className="text-2xl">
+                      {userData.username.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <CardTitle className="text-2xl">{userData.username}</CardTitle>
+                  <Badge variant="secondary">{userData.usertype}</Badge>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      Member since {new Date(userData.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Code className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{userData.email}</span>
+                  </div>
+                  {userStats && (
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {userStats.problemsSolved || 0} problems solved
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-      <div className="container mx-auto px-4 ">
-        <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+            {/* Stats and Activity */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Statistics</h2>
+                <Button 
+                  variant="outline" 
+                  onClick={() => router.push("/stats/user")}
+                  className="flex items-center gap-2"
+                >
+                  View Detailed Stats
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
 
-        {/* User Info */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>User Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-              {isLoading ? (
-                <Skeleton className="h-20 w-20 rounded-full" />
-              ) : (
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src="" alt={userData?.username} />
-                  <AvatarFallback className="bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200 text-xl">
-                    {getInitials(userData?.username)}
-                  </AvatarFallback>
-                </Avatar>
+              {/* Stats Grid */}
+              {userStats && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <UserStatsCard
+                    title="Total Submissions"
+                    value={userStats.totalSubmissions || 0}
+                    icon={<ListChecks className="h-6 w-6" />}
+                    isLoading={false}
+                  />
+                  <UserStatsCard
+                    title="Accepted"
+                    value={userStats.acceptedSubmissions || 0}
+                    icon={<CheckCircle className="h-6 w-6" />}
+                    isLoading={false}
+                  />
+                  <UserStatsCard
+                    title="Acceptance Rate"
+                    value={`${userStats.acceptanceRate || 0}%`}
+                    icon={<Code className="h-6 w-6" />}
+                    isLoading={false}
+                  />
+                  <UserStatsCard
+                    title="Problems Solved"
+                    value={userStats.problemsSolved || 0}
+                    icon={<CheckCircle className="h-6 w-6" />}
+                    isLoading={false}
+                  />
+                </div>
               )}
 
-              <div className="space-y-2 flex-1">
-                {isLoading ? (
-                  <>
-                    <Skeleton className="h-8 w-48" />
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-64" />
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-2xl font-semibold">{userData?.username}</h2>
-                      <Badge className={userData?.usertype === "Admin" ? "bg-violet-600" : "bg-blue-500"}>
-                        {userData?.usertype}
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground">{userData?.email}</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <CalendarDays className="mr-2 h-4 w-4" />
-                      Joined on {new Date(userData?.createdAt || Date.now()).toLocaleDateString()}
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* Recent Submissions */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Recent Submissions</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push("/submissions")}
+                    className="flex items-center gap-2"
+                  >
+                    View All
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <SubmissionsTable 
+                    submissions={recentSubmissions} 
+                    isLoading={false} 
+                  />
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Statistics */}
-        <h2 className="text-xl font-semibold mb-4">Statistics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <UserStatsCard
-            title="Problems Attempted"
-            value={userStats?.totalAttempted}
-            icon={<ListChecks className="h-5 w-5 text-blue-500 dark:text-blue-400" />}
-            isLoading={isLoading}
-          />
-          <UserStatsCard
-            title="Accepted Solutions"
-            value={userStats?.totalAccepted}
-            icon={<CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />}
-            isLoading={isLoading}
-          />
-          <UserStatsCard
-            title="Accuracy Rate"
-            value={`${userStats?.accuracyRate}%`}
-            icon={<Code className="h-5 w-5 text-violet-500 dark:text-violet-400" />}
-            isLoading={isLoading}
-          />
-        </div>
-
-        {/* Submissions */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Recent Submissions</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-violet-600 border-violet-600 dark:text-violet-400 dark:border-violet-400"
-              onClick={() => router.push("/submissions")}
-            >
-              View All
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
           </div>
-
-          <SubmissionsTable submissions={recentSubmissions} isLoading={isLoading} />
         </div>
       </div>
     </div>
