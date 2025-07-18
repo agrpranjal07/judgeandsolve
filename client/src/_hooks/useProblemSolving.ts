@@ -35,6 +35,28 @@ export const useProblemSolving = (problemId: string) => {
   const accessToken = useAuthStore((state) => state.accessToken);
   const { toast } = useToast();
 
+  // Check for pre-filled code from submission page
+  useEffect(() => {
+    try {
+      const prefillData = localStorage.getItem('prefillCode');
+      if (prefillData) {
+        const { code: prefillCode, language: prefillLanguage } = JSON.parse(prefillData);
+        setCode(prefillCode);
+        setLanguage(prefillLanguage);
+        
+        // Clear the prefill data after using it
+        localStorage.removeItem('prefillCode');
+        
+        toast({
+          title: "Code Pre-filled",
+          description: "Code from your submission has been loaded for testing.",
+        });
+      }
+    } catch (error) {
+      console.warn("Failed to load pre-filled code:", error);
+    }
+  }, [toast]);
+
   // Load problem data
   useEffect(() => {
     if (!problemId) return;

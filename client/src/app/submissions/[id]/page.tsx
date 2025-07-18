@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/_components/ui/card";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { Textarea } from "@/_components/ui/textarea";
-import { CodeEditor  } from "@/_components/problems/CodeEditor";
-import { toast } from "@/_hooks/use-toast";
-import useAuthStore from "@/_store/auth";
+import { CodeEditor } from "@/_components/problems/CodeEditor";
+import { Skeleton } from "@/_components/ui/skeleton";
 import {
   CheckCircle,
   XCircle,
@@ -19,140 +18,44 @@ import {
   Clipboard,
   ExternalLink,
   Pencil,
+  Zap,
 } from "lucide-react";
-import api from "@/_services/api";
-
-type Submission = {
-  id: string;
-  userId: string;
-  problemId: string;
-  code: string;
-  language: string;
-  reviewNote: string | null;
-  status: string;
-  verdict: string;
-  createdAt: string;
-};
-
-type TestcaseResult = {
-  testcaseId?: string;
-  passed: boolean;
-  runtime: number;
-  memory: number;
-};
-
-type Problem = {
-  id: string;
-  title: string;
-};
+import { useSubmissionDetail } from "@/_hooks/useSubmissionDetail";
 
 export default function SubmissionDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { accessToken } = useAuthStore();
-  const [submission, setSubmission] = useState<Submission | null>(null);
-  const [testcaseResults, setTestcaseResults] = useState<TestcaseResult[]>([]);
-  const [problem, setProblem] = useState<Problem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProblemLoading, setIsProblemLoading] = useState(false);
-  const [reviewNote, setReviewNote] = useState("");
-  const [editingReview, setEditingReview] = useState(false);
-  const [isSavingReview, setIsSavingReview] = useState(false);
+  const submissionId = params.id as string;
+  
+  const {
+    submission,
+    testcaseResults,
+    problem,
+    isLoading,
+    reviewNote,
+    setReviewNote,
+    editingReview,
+    setEditingReview,
+    isSavingReview,
+    testCaseStats,
+    handleCopyCode,
+    handleSaveReview,
+  } = useSubmissionDetail(submissionId);
 
-  useEffect(() => {
-    const fetchSubmission = async () => {
-      setIsLoading(true);
-      try {
-        const res = await api.get(`/submissions/${params.id}`, {
-          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        });
-        if (!res.data?.data) throw new Error("Not found");
-        
-        const data = res.data.data;
-        const sub = data as Submission;
-        setSubmission(sub);
-        setReviewNote(sub.reviewNote || "");
-        setTestcaseResults(data.testcaseResults || []);
-        if (sub.problemId) fetchProblem(sub.problemId);
-      } catch {
-        setSubmission(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    const fetchProblem = async (problemId: string) => {
-      setIsProblemLoading(true);
-      try {
-        const res = await api.get(`/problems/${problemId}`);
-        if (!res) throw new Error("Not found");
-        const data = res.data;
-        setProblem({id:problemId,title:data.data.title});
-      } catch {
-        setProblem(null);
-      } finally {
-        setIsProblemLoading(false);
-      }
-    };
-    if (params.id) fetchSubmission();
-  }, [params.id, accessToken]);
-
-  // Verdict badge/icon helpers
+  // Verdict badge/icon helpers (original functions)
   const getVerdictIcon = (verdict: string) => {
     if (verdict?.toLowerCase().includes("accept")) return <CheckCircle className="h-5 w-5 text-green-500" />;
     if (verdict?.toLowerCase().includes("pending")) return <Clock className="h-5 w-5 text-yellow-500" />;
     return <XCircle className="h-5 w-5 text-red-500" />;
   };
+
   const getVerdictColor = (verdict: string) => {
     if (verdict?.toLowerCase().includes("accept")) return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-300";
     if (verdict?.toLowerCase().includes("pending")) return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-300";
     return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-300";
   };
 
-  // Testcase stats
-  const passed = testcaseResults.filter((t) => t.passed).length;
-  const avgRuntime = testcaseResults.length
-    ? Math.round(testcaseResults.reduce((a, b) => a + (b.runtime || 0), 0) / testcaseResults.length)
-    : 0;
-  const avgMemory = testcaseResults.length
-    ? (testcaseResults.reduce((a, b) => a + (b.memory || 0), 0) / testcaseResults.length).toFixed(1)
-    : "0.0";
-
-  // Copy code
-  const handleCopyCode = async () => {
-    if (!submission?.code) return;
-    try {
-      await navigator.clipboard.writeText(submission.code);
-      toast({ title: "Copied!", description: "Code copied to clipboard." });
-    } catch {
-      toast({ title: "Copy failed", description: "Could not copy code.", variant: "destructive" });
-    }
-  };
-
-  // Save review note
-  const handleSaveReview = async () => {
-    if (!submission || !accessToken) return;
-    setIsSavingReview(true);
-    try {
-      const res = await api.post(
-        `/submissions/review/${submission.id}`,{
-          reviewNote,
-        },
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
-      if (!res.data?.data) throw new Error("Failed to save review");
-      setSubmission((s) => (s ? { ...s, reviewNote } : s));
-      setEditingReview(false);
-      toast({ title: "Review saved" });
-    } catch {
-      toast({ title: "Failed to save review", variant: "destructive" });
-    } finally {
-      setIsSavingReview(false);
-    }
-  };
-
-  // Loading state
+  // Loading state (original design)
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -165,7 +68,8 @@ export default function SubmissionDetailPage() {
       </div>
     );
   }
-  // Not found
+
+  // Not found (original design)
   if (!submission) {
     return (
       <div className="min-h-screen bg-background">
@@ -180,12 +84,11 @@ export default function SubmissionDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 space-y-6">
-        {/* Header */}
+        {/* Header (original design) */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold">Submission Details</h1>
             <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-            
               {problem && (
                 <a
                   href={`/problems/${problem.id}`}
@@ -193,7 +96,7 @@ export default function SubmissionDetailPage() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-primary hover:underline"
                 >
-                  {isProblemLoading ? "Loading..." : problem.title}
+                  {problem.title}
                   <ExternalLink className="h-3 w-3" />
                 </a>
               )}
@@ -208,9 +111,9 @@ export default function SubmissionDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
+          {/* Main Content (original layout) */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Code */}
+            {/* Code (original design) */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -243,7 +146,7 @@ export default function SubmissionDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Review Note */}
+            {/* Review Note (original design) */}
             <Card>
               <CardHeader>
                 <CardTitle>Review Note</CardTitle>
@@ -284,9 +187,11 @@ export default function SubmissionDetailPage() {
                       </Button>
                       {submission.reviewNote && (
                         <Button
-                          variant="ghost"
-                          type="button"
-                          onClick={() => setEditingReview(false)}
+                          variant="outline"
+                          onClick={() => {
+                            setEditingReview(false);
+                            setReviewNote(submission.reviewNote || "");
+                          }}
                         >
                           Cancel
                         </Button>
@@ -298,94 +203,120 @@ export default function SubmissionDetailPage() {
             </Card>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar (original layout) */}
           <div className="space-y-6">
-            {/* Submission Info */}
+            {/* Submission Info (original design) */}
             <Card>
               <CardHeader>
                 <CardTitle>Submission Info</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Submitted</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(submission.createdAt).toLocaleString()}
-                    </p>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Submitted</span>
+                  <span>{new Date(submission.createdAt).toLocaleString()}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Play className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Avg Runtime</p>
-                    <p className="text-sm text-muted-foreground">{avgRuntime}ms</p>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Language</span>
+                  <span className="capitalize">{submission.language}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Code2 className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Avg Memory</p>
-                    <p className="text-sm text-muted-foreground">{avgMemory}MB</p>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <span>{submission.status}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Verdict</span>
+                  <Badge className={getVerdictColor(submission.verdict)}>
+                    {submission.verdict}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Test Results */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Test Results</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Test Cases</span>
-                    <span className="text-sm">
-                      {passed}/{testcaseResults.length}
+            {/* Test Results (original design) */}
+            {testcaseResults.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Test Results</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Passed</span>
+                    <span className="font-medium text-green-600">
+                      {testCaseStats.passed}/{testCaseStats.total}
                     </span>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        passed === testcaseResults.length
-                          ? "bg-green-500"
-                          : "bg-red-500"
-                      }`}
-                      style={{
-                        width:
-                          testcaseResults.length > 0
-                            ? `${(passed / testcaseResults.length) * 100}%`
-                            : "0%",
-                      }}
-                    />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Avg Runtime</span>
+                    <span>{testCaseStats.avgRuntime}ms</span>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {passed === testcaseResults.length
-                      ? "All test cases passed!"
-                      : `${testcaseResults.length - passed} test case(s) failed`}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Avg Memory</span>
+                    <span>{testCaseStats.avgMemory}MB</span>
                   </div>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {testcaseResults.map((result, idx) => (
+                  
+                  <div className="pt-4 border-t space-y-2">
+                    {testcaseResults.map((result, index) => (
                       <div
-                        key={result.testcaseId || idx}
-                        className="flex items-center justify-between p-2 bg-muted/50 rounded text-xs"
+                        key={index}
+                        className="flex items-center justify-between p-2 border rounded"
                       >
                         <div className="flex items-center gap-2">
                           {result.passed ? (
-                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-green-500" />
                           ) : (
-                            <XCircle className="h-3 w-3 text-red-500" />
+                            <XCircle className="h-4 w-4 text-red-500" />
                           )}
-                          <span>Test {idx + 1}</span>
+                          <span className="text-sm">Test {index + 1}</span>
                         </div>
-                        <div className="text-muted-foreground">
-                          {result.runtime}ms | {result.memory?.toFixed(1) ?? "—"}MB
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {result.runtime || 0}ms
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Zap className="h-3 w-3" />
+                            {result.memory || 0}MB
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Actions (original design) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  onClick={() => router.push(`/problems/${problem?.id}`)}
+                  variant="outline"
+                  className="w-full flex items-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View Problem
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Store the submission code in localStorage to pre-fill the problem page
+                    if (submission) {
+                      localStorage.setItem('prefillCode', JSON.stringify({
+                        code: submission.code,
+                        language: submission.language,
+                        fromSubmission: submission.id
+                      }));
+                    }
+                    router.push(`/problems/${problem?.id}`);
+                  }}
+                  variant="outline"
+                  className="w-full flex items-center gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  Test on Problem
+                </Button>
               </CardContent>
             </Card>
           </div>
