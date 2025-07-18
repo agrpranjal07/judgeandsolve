@@ -15,6 +15,17 @@ export interface UserStats {
   totalAttempted: number;
 }
 
+export interface ProfileSubmission {
+  id: string;
+  problemTitle: string;
+  problemId: string;
+  language: string;
+  verdict: "ACCEPTED" | "WRONG_ANSWER" | "TIME_LIMIT_EXCEEDED" | "MEMORY_LIMIT_EXCEEDED" | "RUNTIME_ERROR" | "COMPILATION_ERROR";
+  createdAt: string;
+  runtime: number;
+  memory: number;
+}
+
 export class ProfileService {
   async getUserProfile(): Promise<UserData> {
     const response = await api.get("/auth/me");
@@ -26,7 +37,7 @@ export class ProfileService {
     return response.data.data;
   }
 
-  async getRecentSubmissions(limit: number = 5, offset: number = 0): Promise<any[]> {
+  async getRecentSubmissions(limit: number = 5, offset: number = 0): Promise<ProfileSubmission[]> {
     const response = await api.get(`/recentSubmissions?limit=${limit}&offset=${offset}`);
     return response.data.data || [];
   }

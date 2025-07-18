@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
-import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader } from "@/_components/ui/card";
 import { Button } from "@/_components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
@@ -44,7 +43,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
   useEffect(() => {
     loader.init().then(monaco => {
-      monaco.editor.defineTheme('night-owl', nightOwl as any);
+      monaco.editor.defineTheme('night-owl', nightOwl as unknown);
       setIsMonacoReady(true);
     });
   }, []);

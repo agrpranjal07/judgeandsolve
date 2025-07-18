@@ -7,12 +7,10 @@ import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { Textarea } from "@/_components/ui/textarea";
 import { CodeEditor } from "@/_components/problems/CodeEditor";
-import { Skeleton } from "@/_components/ui/skeleton";
 import {
   CheckCircle,
   XCircle,
   Clock,
-  Calendar,
   Code2,
   Play,
   Clipboard,

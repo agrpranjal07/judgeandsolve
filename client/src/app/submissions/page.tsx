@@ -34,14 +34,9 @@ function SubmissionPage() {
   const [isLoading, setIsLoading] = useState(true)
   const limit = 17 // Number of submissions per page
 
-  // Show loading while authentication is being verified
-  if (authLoading || !isAllowed) {
-    return <AuthLoader />;
-  }
-
   useEffect(() => {
     // Only fetch data if user is authenticated and allowed to access this route
-    if (!isAllowed) {
+    if (!isAllowed || authLoading) {
       return;
     }
 
@@ -56,9 +51,14 @@ function SubmissionPage() {
       }
     }
     fetchTotalPages()
-  }, [accessToken])
+  }, [accessToken, isAllowed, authLoading])
 
   useEffect(() => {
+    // Only fetch data if user is authenticated and allowed to access this route
+    if (!isAllowed || authLoading) {
+      return;
+    }
+
     const fetchSubmissions = async (page = 1) => {
       setIsLoading(true)
       try {
@@ -77,7 +77,12 @@ function SubmissionPage() {
       }
     }
     fetchSubmissions(currentPage)
-  }, [accessToken, currentPage, isAllowed])
+  }, [accessToken, currentPage, isAllowed, authLoading])
+
+  // Show loading while authentication is being verified
+  if (authLoading || !isAllowed) {
+    return <AuthLoader />;
+  }
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return

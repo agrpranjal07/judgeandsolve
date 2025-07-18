@@ -26,8 +26,8 @@ const UserProfilePage = () => {
         const response = await api.get(`/auth/profile/${username}`);
         setUserProfile(response.data.data);
         setLoading(false);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch user profile.');
+      } catch (err: unknown) {
+        setError((err as { response?: { data?: { message: string } } })?.response?.data?.message || 'Failed to fetch user profile.');
         setLoading(false);
       }
     };
@@ -53,7 +53,7 @@ const UserProfilePage = () => {
     <div className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>{userProfile.username}'s Profile</CardTitle>
+          <CardTitle>{userProfile.username}&apos;s Profile</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

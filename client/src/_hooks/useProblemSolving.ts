@@ -190,7 +190,7 @@ export const useProblemSolving = (problemId: string) => {
           results: submission.testcaseResults,
         });
 
-        const passedCount = submission.testcaseResults.filter((t: any) => t.passed).length;
+        const passedCount = submission.testcaseResults.filter((t: { passed: boolean }) => t.passed).length;
         const failed = submission.testcaseResults.length - passedCount;
 
         if (submission.verdict === "Accepted" || failed >= 2) {

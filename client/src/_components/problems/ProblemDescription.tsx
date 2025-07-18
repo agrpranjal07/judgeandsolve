@@ -53,7 +53,7 @@ export const ProblemDescription: React.FC<ProblemDescriptionProps> = ({ problem 
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw]}
             components={{
-              code({ node, inline, className, children, ...props }: any) {
+              code({ className, children, ...props }: { className?: string; children?: React.ReactNode; inline?: boolean }) {
                 const match = /language-(\w+)/.exec(className || "");
                 return !props.inline && match ? (
                   <pre className="bg-gray-800 text-white p-4 rounded-md overflow-auto">

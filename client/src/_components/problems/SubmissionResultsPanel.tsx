@@ -38,9 +38,9 @@ export const SubmissionResultsPanel: React.FC<SubmissionResultsPanelProps> = ({
 
   if (submissionResults) {
     const isAccepted = submissionResults.verdict === "Accepted";
-    const passedCount = submissionResults.results.filter((r: any) => r.passed).length;
-    const totalRuntime = submissionResults.results.reduce((acc: number, r: any) => acc + r.runtime, 0);
-    const totalMemory = submissionResults.results.reduce((acc: number, r: any) => acc + (r.memory || 0), 0);
+    const passedCount = submissionResults.results.filter((r: { passed: boolean }) => r.passed).length;
+    const totalRuntime = submissionResults.results.reduce((acc: number, r: { runtime: number }) => acc + r.runtime, 0);
+    const totalMemory = submissionResults.results.reduce((acc: number, r: { memory?: number }) => acc + (r.memory || 0), 0);
 
     return (
       <CardContent className="pt-0 px-4 pb-6 space-y-4">

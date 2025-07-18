@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/_hooks/use-toast";
 import { useAuthGuard } from "@/_hooks/useAuthGuard";
 import useAuthStore from "@/_store/auth";
-import { profileService, UserData, UserStats } from "@/_services/profile.service";
+import { profileService, UserData, UserStats, ProfileSubmission } from "@/_services/profile.service";
 
 export const useProfile = () => {
   useAuthGuard();
@@ -12,7 +12,7 @@ export const useProfile = () => {
   
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [recentSubmissions, setRecentSubmissions] = useState<ProfileSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch user profile if not in store

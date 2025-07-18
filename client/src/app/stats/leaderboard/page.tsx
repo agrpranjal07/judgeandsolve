@@ -24,7 +24,7 @@ function LeaderboardPage() {
   const { isAllowed, isLoading: authLoading } = useProtectedRoute();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user: currentUser, setUser: setCurrentUser } = useAuthStore();
+  const { user: currentUser } = useAuthStore();
 
   useEffect(() => {
     // Only fetch data if user is authenticated and allowed to access this route

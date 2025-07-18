@@ -53,13 +53,13 @@ export interface AIReview {
 
 export class ProblemService {
   async getProblem(problemId: string): Promise<Problem> {
-    const [problemRes, testcaseRes, tagsRes] = await Promise.all([
+    const [problemRes, , tagsRes] = await Promise.all([
       api.get(`/problems/${problemId}`),
       api.get(`/problems/${problemId}/testcases/public`),
       api.get(`/problems/${problemId}/tags`),
     ]);
 
-    let problemData = problemRes.data.data;
+    const problemData = problemRes.data.data;
     const creatorId = problemData.createdBy;
     
     try {
@@ -87,12 +87,12 @@ export class ProblemService {
     }
 
     return response.data.data
-      .filter((tc: any) => tc.isSample)
-      .map((tc: any) => ({
-        id: tc.id,
-        problemId: tc.problemId,
-        input: tc.input,
-        output: tc.output,
+      .filter((tc: unknown) => (tc as { isSample: boolean }).isSample)
+      .map((tc: unknown) => ({
+        id: (tc as { id: string }).id,
+        problemId: (tc as { problemId: string }).problemId,
+        input: (tc as { input: string }).input,
+        output: (tc as { output: string }).output,
       }));
   }
 
@@ -113,10 +113,10 @@ export class ProblemService {
       return [];
     }
 
-    return response.data.data.map((tc: any) => ({
-      testcaseId: tc.testcaseId,
-      passed: tc.passed,
-      output: tc.output,
+    return response.data.data.map((tc: unknown) => ({
+      testcaseId: (tc as { testcaseId: string }).testcaseId,
+      passed: (tc as { passed: boolean }).passed,
+      output: (tc as { output: string }).output,
     }));
   }
 
@@ -129,7 +129,7 @@ export class ProblemService {
     return response.data.data;
   }
 
-  async getSubmissionStatus(submissionId: string): Promise<SubmissionResult & { testcaseResults: any[] }> {
+  async getSubmissionStatus(submissionId: string): Promise<SubmissionResult & { testcaseResults: { testcaseId: string; passed: boolean; runtime: number; memory?: number }[] }> {
     const response = await api.get(`/submissions/${submissionId}`);
     const submission = response.data.data;
     

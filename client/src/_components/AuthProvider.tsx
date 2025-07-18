@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import useAuthStore from '@/_store/auth';
 import api from '@/_services/api';
 
@@ -65,12 +65,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
           store.clearAccessToken();
           store.setUser(null);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Only log the error if we actually attempted a refresh
         const hasStoredAuth = store.accessToken || store.user;
         
-        if (hasStoredAuth && error.response?.status !== 401) {
-          console.warn('Token refresh failed:', error.message);
+        if (hasStoredAuth && (error as { response?: { status: number } })?.response?.status !== 401) {
+          console.warn('Token refresh failed:', (error as Error).message);
         }
         store.clearAccessToken();
         store.setUser(null);
@@ -82,7 +82,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
     // Run initialization on every mount, but wait for hydration
     initializeAuth();
-  }, [store._hasHydrated]); // Depend on hydration state
+  }, [store._hasHydrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Set up storage event listener for cross-tab synchronization
   useEffect(() => {
@@ -150,7 +150,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <AuthContext.Provider value={{ isInitialized: store.isInitialized, isLoading: store.isLoading }}>

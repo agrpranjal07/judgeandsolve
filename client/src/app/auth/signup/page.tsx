@@ -49,7 +49,8 @@ const SignupPage = () => {
 
       router.push('/auth/login');
 
-    } catch (err: any) {
+        } catch (error: unknown) {
+      const err = error as { response?: { data?: { message: string } }; message?: string };
       if (err.response?.data?.message) {
         toast({
           title: "Error",

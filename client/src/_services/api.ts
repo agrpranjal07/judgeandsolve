@@ -4,9 +4,9 @@ import useAuthStore from '@/_store/auth';
 
 // Track if a refresh is in progress to avoid multiple simultaneous refreshes
 let isRefreshing = false;
-let failedQueue: any[] = [];
+let failedQueue: Array<{ resolve: (token: string | null) => void; reject: (error: unknown) => void }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach(({ resolve, reject }) => {
     if (error) {
       reject(error);

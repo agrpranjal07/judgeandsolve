@@ -109,11 +109,12 @@ const LoginPage = () => {
       
       // Navigate to the redirect path
       router.push(redirectPath);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message: string } }; message?: string };
       toast({
         title: 'Login Failed',
         description:
-          error.response?.data?.message || error.message || 'An error occurred during login.',
+          err.response?.data?.message || err.message || 'An error occurred during login.',
         variant: 'destructive',
       });
     }

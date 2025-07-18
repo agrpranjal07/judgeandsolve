@@ -1,5 +1,5 @@
 import api from './api';
-import { Problem, PastSubmission } from './problem.service';
+import { Problem } from './problem.service';
 
 export interface ProblemsFilter {
   difficulty?: string;

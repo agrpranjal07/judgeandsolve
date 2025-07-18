@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useToast } from "@/_hooks/use-toast";
 import useAuthStore from "@/_store/auth";
@@ -20,24 +20,7 @@ export const useProblems = () => {
 
   const limit = 10;
 
-  // Update state from URL params
-  useEffect(() => {
-    const difficulty = searchParams.get("difficulty") || "All";
-    const page = parseInt(searchParams.get("page") || "1");
-
-    setSelectedDifficulty(difficulty);
-    setCurrentPage(page);
-    fetchProblems({ difficulty, page });
-  }, [searchParams]);
-
-  // Fetch solved problems when user is authenticated
-  useEffect(() => {
-    if (accessToken) {
-      fetchSolvedProblems();
-    }
-  }, [accessToken]);
-
-  const fetchProblems = async (filter: ProblemsFilter = {}) => {
+  const fetchProblems = useCallback(async (filter: ProblemsFilter = {}) => {
     setIsLoading(true);
     try {
       const { difficulty = "All", page = 1 } = filter;
@@ -61,7 +44,24 @@ export const useProblems = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  // Update state from URL params
+  useEffect(() => {
+    const difficulty = searchParams.get("difficulty") || "All";
+    const page = parseInt(searchParams.get("page") || "1");
+
+    setSelectedDifficulty(difficulty);
+    setCurrentPage(page);
+    fetchProblems({ difficulty, page });
+  }, [searchParams, fetchProblems]);
+
+  // Fetch solved problems when user is authenticated
+  useEffect(() => {
+    if (accessToken) {
+      fetchSolvedProblems();
+    }
+  }, [accessToken]);
 
   const fetchSolvedProblems = async () => {
     try {
