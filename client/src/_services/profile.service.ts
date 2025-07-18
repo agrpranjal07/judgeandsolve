@@ -1,10 +1,11 @@
 import api from './api';
 
 export interface UserData {
+  id: string;
   username: string;
   email: string;
   usertype: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface UserStats {

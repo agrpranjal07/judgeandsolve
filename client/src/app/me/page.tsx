@@ -10,10 +10,23 @@ import { CalendarDays, Code, CheckCircle, ListChecks, ArrowRight } from "lucide-
 import { UserStatsCard } from "@/_components/profile/UserStatsCard";
 import { SubmissionsTable } from "@/_components/profile/SubmissionTable";
 import { useProfile } from "@/_hooks/useProfile";
+import { useAuthGuard } from "@/_hooks/useAuthGuard";
+import AuthLoader from "@/_components/AuthLoader";
 
 const ProfilePage = () => {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const { userData, userStats, recentSubmissions, isLoading } = useProfile();
+
+  // Show loading while auth is initializing
+  if (authLoading) {
+    return <AuthLoader />;
+  }
+
+  // useAuthGuard will redirect if not authenticated, so this is just a fallback
+  if (!isAuthenticated) {
+    return <AuthLoader />;
+  }
 
   if (isLoading || !userData) {
     return (

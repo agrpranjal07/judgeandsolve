@@ -7,6 +7,7 @@ import { Pagination } from "@/_components/problems/Pagination";
 import { useProblems } from "@/_hooks/useProblems";
 
 function ProblemsPageContent() {
+  // Remove auth guard - problems page should be accessible to everyone
   const {
     problems,
     solvedProblems,

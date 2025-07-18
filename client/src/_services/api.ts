@@ -1,6 +1,23 @@
 import axios from 'axios';
 import { redirect } from 'next/navigation';
 import useAuthStore from '@/_store/auth';
+
+// Track if a refresh is in progress to avoid multiple simultaneous refreshes
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   withCredentials: true, // Needed for HttpOnly cookies (refresh token)
@@ -30,27 +47,47 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response.status === 401 && !originalRequest._retry) {
+    
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // If refresh is already in progress, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        // Import inside the interceptor to avoid issues with Zustand hydration
-      
-
         const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
-        const newAccessToken = response.data.accessToken;
-        useAuthStore.getState().setAccessToken(newAccessToken);
+        const newAccessToken = response.data?.data?.accessToken || response.data?.accessToken;
+        
+        if (newAccessToken) {
+          useAuthStore.getState().setAccessToken(newAccessToken);
+          processQueue(null, newAccessToken);
 
-        // Update the authorization header of the original request
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          // Update the authorization header of the original request
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
-        // Retry the original request
-        return api(originalRequest);
+          // Retry the original request
+          return api(originalRequest);
+        } else {
+          throw new Error('No access token in refresh response');
+        }
       } catch (refreshError) {
         // Refresh failed, clear state and redirect to login
+        processQueue(refreshError, null);
         useAuthStore.getState().logout();
-        redirect('/auth/login'); // Use next/navigation.redirect for App Router
+        redirect('/auth/login');
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

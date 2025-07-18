@@ -21,13 +21,15 @@ import SocialAuthButton from '@/_components/SocialAuthButton';
 import { useToast } from '@/_hooks/use-toast';
 import useFormValidation from '@/_hooks/useFormValidation';
 import { useAuth } from '@/_hooks/useAuth';
-import { useState } from "react";
+import { useAuthContext } from '@/_components/AuthProvider';
+import AuthLoader from '@/_components/AuthLoader';
+import { useState, useEffect } from "react";
 
 const LoginPage = () => {
   const router = useRouter();
   const { toast } = useToast();
-
-  const { setAccessToken, setUser } = useAuth();
+  const { setAccessToken, setUser, accessToken, user } = useAuth();
+  const { isInitialized, isLoading: authLoading } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
 
   const loginSchema = z.object({
@@ -47,6 +49,23 @@ const LoginPage = () => {
     isLoading,
     validationErrors,
   } = useFormValidation(initialFormData, loginSchema);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isInitialized && !authLoading && accessToken && user) {
+      router.push('/');
+    }
+  }, [isInitialized, authLoading, accessToken, user, router]);
+
+  // Show loading while auth is initializing
+  if (!isInitialized || authLoading) {
+    return <AuthLoader />;
+  }
+
+  // Don't show login page if already authenticated
+  if (accessToken && user) {
+    return <AuthLoader />;
+  }
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
