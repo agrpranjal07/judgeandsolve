@@ -9,10 +9,9 @@ export interface UserData {
 
 export interface UserStats {
   totalSubmissions: number;
-  acceptedSubmissions: number;
-  acceptanceRate: number;
-  problemsSolved: number;
-  recentSubmissions: any[];
+  totalAccepted: number;
+  accuracyRate: number;
+  totalAttempted: number;
 }
 
 export class ProfileService {

@@ -96,7 +96,7 @@ const ProfilePage = () => {
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">
-                        {userStats.problemsSolved || 0} problems solved
+                        {userStats.totalAccepted || 0} problems solved
                       </span>
                     </div>
                   )}
@@ -129,19 +129,19 @@ const ProfilePage = () => {
                   />
                   <UserStatsCard
                     title="Accepted"
-                    value={userStats.acceptedSubmissions || 0}
+                    value={userStats.totalAccepted || 0}
                     icon={<CheckCircle className="h-6 w-6" />}
                     isLoading={false}
                   />
                   <UserStatsCard
                     title="Acceptance Rate"
-                    value={`${userStats.acceptanceRate || 0}%`}
+                    value={`${userStats.accuracyRate || 0}%`}
                     icon={<Code className="h-6 w-6" />}
                     isLoading={false}
                   />
                   <UserStatsCard
-                    title="Problems Solved"
-                    value={userStats.problemsSolved || 0}
+                    title="Problems Attempted"
+                    value={userStats.totalAttempted || 0}
                     icon={<CheckCircle className="h-6 w-6" />}
                     isLoading={false}
                   />
