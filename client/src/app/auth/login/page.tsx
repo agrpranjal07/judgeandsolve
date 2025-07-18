@@ -32,6 +32,22 @@ const LoginPage = () => {
   const { isInitialized, isLoading: authLoading } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
 
+  // Get redirect path from URL params or sessionStorage
+  const getRedirectPath = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRedirect = urlParams.get('redirect');
+    const sessionRedirect = sessionStorage.getItem('redirectAfterLogin');
+    
+    const redirectPath = urlRedirect || sessionRedirect || '/';
+    
+    // Ensure we don't redirect to auth pages
+    if (redirectPath.startsWith('/auth/')) {
+      return '/';
+    }
+    
+    return redirectPath;
+  };
+
   const loginSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters long'),
@@ -53,7 +69,12 @@ const LoginPage = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isInitialized && !authLoading && accessToken && user) {
-      router.push('/');
+      // Get redirect path and clean up
+      const redirectPath = getRedirectPath();
+      sessionStorage.removeItem('redirectAfterLogin');
+      
+      // Navigate to the redirect path
+      router.push(redirectPath);
     }
   }, [isInitialized, authLoading, accessToken, user, router]);
 
@@ -82,7 +103,12 @@ const LoginPage = () => {
         variant: 'default',
       });
 
-      router.push('/');
+      // Get redirect path and clean up
+      const redirectPath = getRedirectPath();
+      sessionStorage.removeItem('redirectAfterLogin');
+      
+      // Navigate to the redirect path
+      router.push(redirectPath);
     } catch (error: any) {
       toast({
         title: 'Login Failed',

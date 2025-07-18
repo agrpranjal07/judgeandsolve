@@ -35,9 +35,37 @@ export const useProblemSolving = (problemId: string) => {
   const accessToken = useAuthStore((state) => state.accessToken);
   const { toast } = useToast();
 
-  // Check for pre-filled code from submission page
+  // Clean up old saved codes on mount (cleanup utility)
   useEffect(() => {
     try {
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      const keysToRemove: string[] = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('problemCode_')) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            if (data.timestamp && data.timestamp < sevenDaysAgo) {
+              keysToRemove.push(key);
+            }
+          } catch {
+            // Invalid JSON, remove it
+            keysToRemove.push(key);
+          }
+        }
+      }
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+    } catch (error) {
+      console.error("Error cleaning up old saved codes:", error);
+    }
+  }, []);
+
+    // Check for pre-filled code from submission page and restore saved code
+  useEffect(() => {
+    try {
+      // First check for prefill data (from submission page)
       const prefillData = localStorage.getItem('prefillCode');
       if (prefillData) {
         const { code: prefillCode, language: prefillLanguage } = JSON.parse(prefillData);
@@ -48,14 +76,58 @@ export const useProblemSolving = (problemId: string) => {
         localStorage.removeItem('prefillCode');
         
         toast({
-          title: "Code Pre-filled",
-          description: "Code from your submission has been loaded for testing.",
+          title: "Code Loaded",
+          description: "Code from submission has been loaded into the editor.",
+          variant: "default",
         });
+        return; // Don't load saved code if we have prefill data
+      }
+      
+      // If no prefill data, check for saved code for this problem
+      const savedCodeKey = `problemCode_${problemId}`;
+      const savedData = localStorage.getItem(savedCodeKey);
+      if (savedData) {
+        const { code: savedCode, language: savedLanguage, timestamp } = JSON.parse(savedData);
+        
+        // Only restore if saved within last 7 days
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        if (timestamp > sevenDaysAgo) {
+          setCode(savedCode);
+          setLanguage(savedLanguage);
+          
+          toast({
+            title: "Code Restored",
+            description: "Your previous code has been restored from local storage.",
+            variant: "default",
+          });
+        } else {
+          // Clean up old saved code
+          localStorage.removeItem(savedCodeKey);
+        }
       }
     } catch (error) {
-      console.warn("Failed to load pre-filled code:", error);
+      console.error("Error loading saved code:", error);
     }
-  }, [toast]);
+  }, [problemId, toast]);
+
+  // Auto-save code changes to localStorage
+  useEffect(() => {
+    if (problem && code.trim()) {
+      const saveCodeKey = `problemCode_${problemId}`;
+      const dataToSave = {
+        code: code,
+        language: language,
+        timestamp: Date.now(),
+        problemTitle: problem.title
+      };
+      
+      try {
+        localStorage.setItem(saveCodeKey, JSON.stringify(dataToSave));
+      } catch (error) {
+        console.error("Error saving code:", error);
+      }
+    }
+  }, [code, language, problemId, problem]);
 
   // Load problem data
   useEffect(() => {
@@ -240,6 +312,14 @@ export const useProblemSolving = (problemId: string) => {
 
   const handleReset = () => {
     setCode("");
+    
+    // Also clear saved code from localStorage
+    try {
+      const saveCodeKey = `problemCode_${problemId}`;
+      localStorage.removeItem(saveCodeKey);
+    } catch (error) {
+      console.error("Error clearing saved code:", error);
+    }
   };
 
   return {

@@ -8,6 +8,18 @@ import { ArrowRight, Code, BarChart, Trophy } from "lucide-react";
 export default function LandingPage() {
   const router = useRouter();
 
+  const handleLeaderboardClick = () => {
+    // Store the leaderboard path for redirect after login
+    sessionStorage.setItem('redirectAfterLogin', '/stats/leaderboard');
+    router.push('/auth/login');
+  };
+
+  const handleTrackProgressClick = () => {
+    // Store the profile path for redirect after login
+    sessionStorage.setItem('redirectAfterLogin', '/me');
+    router.push('/auth/login');
+  };
+
   return (
     <div className="min-h-[calc(100vh-var(--header-height))] bg-gradient-to-br from-background to-muted/30">
       {/* Hero Section */}
@@ -43,13 +55,13 @@ export default function LandingPage() {
             title: "Leaderboard",
             icon: <Trophy className="text-violet-600 dark:text-violet-400" />,
             description: "Climb ranks and challenge 50K+ active users.",
-            action: () => router.push("/stats/leaderboard")
+            action: handleLeaderboardClick
           },
           {
             title: "Track Progress",
             icon: <BarChart className="text-violet-600 dark:text-violet-400" />,
             description: "Get personalized stats and insights.",
-            action: () => router.push("/auth/login")
+            action: handleTrackProgressClick
           }].map((card, idx) => (
             <Card key={idx}>
               <CardHeader>

@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Trophy, Medal, Award } from "lucide-react";
 import api from '@/_services/api';
 import useAuthStore from '@/_store/auth';
-import { useAuthGuard } from '@/_hooks/useAuthGuard';
+import { useProtectedRoute } from '@/_hooks/useProtectedRoute';
+import AuthLoader from '@/_components/AuthLoader';
 
 interface LeaderboardUser {
   id: string;
@@ -20,12 +21,17 @@ interface LeaderboardUser {
 }
 
 function LeaderboardPage() {
-  useAuthGuard();
+  const { isAllowed, isLoading: authLoading } = useProtectedRoute();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user: currentUser, setUser: setCurrentUser } = useAuthStore();
 
   useEffect(() => {
+    // Only fetch data if user is authenticated and allowed to access this route
+    if (!isAllowed) {
+      return;
+    }
+
     // make API call
     const fetchLeaderboard = async () => {
       try {
@@ -40,7 +46,12 @@ function LeaderboardPage() {
       }
     };
     fetchLeaderboard();
-  }, []);
+  }, [isAllowed]);
+
+  // Show loading while authentication is being verified
+  if (authLoading || !isAllowed) {
+    return <AuthLoader />;
+  }
 
   const getRankIcon = (rank: number) => {
     switch (rank) {

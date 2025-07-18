@@ -11,6 +11,18 @@ export function Header() {
   const router = useRouter();
   const { accessToken, user, logout } = useAuth();
 
+  const handleLoginClick = () => {
+    // Store current path for redirect after login if it's not already an auth page
+    const currentPath = window.location.pathname;
+    if (!currentPath.startsWith('/auth/')) {
+      sessionStorage.setItem('redirectAfterLogin', currentPath);
+      // Use URL parameter for better reliability
+      router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
+    } else {
+      router.push('/auth/login');
+    }
+  };
+
   return (
     <header className="w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -61,7 +73,7 @@ export function Header() {
               <Button
                 variant="outline"
                 className="border-violet-600/50 text-violet-600 dark:border-violet-500/30 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20"
-                onClick={() => router.push("/auth/login")}
+                onClick={handleLoginClick}
               >
                 Log In
               </Button>

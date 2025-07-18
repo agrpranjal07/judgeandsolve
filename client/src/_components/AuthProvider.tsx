@@ -23,50 +23,55 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      // Wait for Zustand to hydrate from localStorage first
+      if (!store._hasHydrated) {
+        return;
+      }
+      
       store.setLoading(true);
       
       try {
-        // Always attempt token refresh on every new tab/page load
-        // This is crucial for cross-tab authentication
-        console.log('Attempting token refresh...');
-        const response = await api.post('/auth/refresh', {}, { withCredentials: true });
+        // Now check for stored auth data after hydration
+        const hasStoredAuth = store.accessToken || store.user;
         
-        console.log('Refresh response:', response.data);
-        
-        // Check different possible response structures
-        const accessToken = response.data?.data?.accessToken || response.data?.accessToken;
-        
-        if (accessToken) {
-          console.log('Token refresh successful');
-          store.setAccessToken(accessToken);
+        // Only attempt token refresh if we have stored auth data or current auth state
+        if (hasStoredAuth) {
+          const response = await api.post('/auth/refresh', {}, { withCredentials: true });
           
-          // If we don't have user data, fetch it
-          const currentUser = store.user;
-          if (!currentUser) {
-            try {
-              const profileResponse = await api.get('/auth/me');
-              if (profileResponse.data?.data) {
-                store.setUser(profileResponse.data.data);
+          // Check different possible response structures
+          const accessToken = response.data?.data?.accessToken || response.data?.accessToken;
+          
+          if (accessToken) {
+            store.setAccessToken(accessToken);
+            
+            // If we don't have user data, fetch it
+            if (!store.user) {
+              try {
+                const profileResponse = await api.get('/auth/me');
+                if (profileResponse.data?.data) {
+                  store.setUser(profileResponse.data.data);
+                }
+              } catch (profileError) {
+                console.warn('Failed to fetch user profile:', profileError);
               }
-            } catch (profileError) {
-              console.warn('Failed to fetch user profile:', profileError);
             }
+          } else {
+            // No valid refresh token, clear state
+            store.clearAccessToken();
+            store.setUser(null);
           }
         } else {
-          // No valid refresh token, clear state
-          console.log('No access token in refresh response. Response structure:', response.data);
+          // No stored auth data, this is a fresh session
           store.clearAccessToken();
           store.setUser(null);
         }
       } catch (error: any) {
-        // Refresh failed, user needs to login
-        console.log('Token refresh failed:', {
-          message: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          url: error.config?.url
-        });
+        // Only log the error if we actually attempted a refresh
+        const hasStoredAuth = store.accessToken || store.user;
+        
+        if (hasStoredAuth && error.response?.status !== 401) {
+          console.warn('Token refresh failed:', error.message);
+        }
         store.clearAccessToken();
         store.setUser(null);
       } finally {
@@ -75,30 +80,27 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    // Run initialization on every mount (including new tabs)
+    // Run initialization on every mount, but wait for hydration
     initializeAuth();
-  }, []); // Empty dependency array - run once per component mount
+  }, [store._hasHydrated]); // Depend on hydration state
 
   // Set up storage event listener for cross-tab synchronization
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'auth-storage') {
-        console.log('Storage change detected:', { 
-          key: e.key, 
-          oldValue: e.oldValue, 
-          newValue: e.newValue 
-        });
-        
         if (e.newValue === null) {
           // User logged out in another tab, clear state immediately
-          console.log('User logged out in another tab, clearing local state');
           store.clearAccessToken();
           store.setUser(null);
           store.setInitialized(true);
           store.setLoading(false);
           
-          // Redirect to home page to show landing page
-          if (window.location.pathname !== '/' && window.location.pathname !== '/problems') {
+          // Redirect to home page to show landing page if on a protected route
+          const currentPath = window.location.pathname;
+          const protectedRoutes = ['/me', '/stats/leaderboard', '/submissions'];
+          const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
+          
+          if (isProtectedRoute) {
             window.location.href = '/';
           }
         } else if (e.newValue && e.newValue !== e.oldValue) {
@@ -106,10 +108,17 @@ export default function AuthProvider({ children }: AuthProviderProps) {
           try {
             const newData = JSON.parse(e.newValue);
             const currentUser = store.user;
+            const currentToken = store.accessToken;
             
-            if (newData.user && !currentUser) {
-              console.log('User logged in another tab, attempting token refresh');
-              // User logged in another tab, try to get fresh token
+            // Check if user logged in another tab (new user data but no current user/token)
+            if (newData.user && !currentUser && !currentToken) {
+              // Set the user data immediately from storage
+              if (newData.accessToken) {
+                store.setAccessToken(newData.accessToken);
+              }
+              store.setUser(newData.user);
+              
+              // Try to get a fresh token as well
               const initAuth = async () => {
                 try {
                   store.setLoading(true);
@@ -118,8 +127,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
                   
                   if (accessToken) {
                     store.setAccessToken(accessToken);
-                    store.setUser(newData.user);
-                    console.log('Successfully synced login from another tab');
                   }
                 } catch (error) {
                   console.warn('Failed to refresh token after cross-tab login:', error);
@@ -129,6 +136,10 @@ export default function AuthProvider({ children }: AuthProviderProps) {
                 }
               };
               initAuth();
+            } else if (newData.accessToken && newData.user && (!currentToken || !currentUser)) {
+              // Direct sync if we have both token and user in the new data
+              store.setAccessToken(newData.accessToken);
+              store.setUser(newData.user);
             }
           } catch (parseError) {
             console.warn('Failed to parse storage data:', parseError);

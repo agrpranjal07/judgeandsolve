@@ -1,11 +1,12 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import { useAuthGuard } from '@/_hooks/useAuthGuard'
+import { useProtectedRoute } from '@/_hooks/useProtectedRoute'
 import api from '@/_services/api'
 import useAuthStore from '@/_store/auth'
 import { SubmissionsTable } from '@/_components/profile/SubmissionTable'
 import { Button } from '@/_components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import AuthLoader from '@/_components/AuthLoader'
 
 interface Submission {
   id: string
@@ -25,14 +26,25 @@ interface Submission {
 }
 
 function SubmissionPage() {
-  useAuthGuard()
+  const { isAllowed, isLoading: authLoading } = useProtectedRoute()
   const accessToken = useAuthStore((state) => state.accessToken)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const limit = 17 // Number of submissions per page
+
+  // Show loading while authentication is being verified
+  if (authLoading || !isAllowed) {
+    return <AuthLoader />;
+  }
+
   useEffect(() => {
+    // Only fetch data if user is authenticated and allowed to access this route
+    if (!isAllowed) {
+      return;
+    }
+
     const fetchTotalPages = async () => {
       try {
         const response = await api.get('/submissions', {
@@ -65,7 +77,7 @@ function SubmissionPage() {
       }
     }
     fetchSubmissions(currentPage)
-  }, [accessToken, currentPage])
+  }, [accessToken, currentPage, isAllowed])
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return
