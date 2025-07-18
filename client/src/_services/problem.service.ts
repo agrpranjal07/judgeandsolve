@@ -1,4 +1,5 @@
 import api from './api';
+import { IProblemService } from '../_interfaces/IProblemService';
 
 export interface Problem {
   id: string;
@@ -51,7 +52,7 @@ export interface AIReview {
   rating: number;
 }
 
-export class ProblemService {
+export class ProblemService implements IProblemService {
   async getProblem(problemId: string): Promise<Problem> {
     const [problemRes, , tagsRes] = await Promise.all([
       api.get(`/problems/${problemId}`),

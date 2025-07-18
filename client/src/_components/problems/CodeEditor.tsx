@@ -43,7 +43,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
   useEffect(() => {
     loader.init().then(monaco => {
-      monaco.editor.defineTheme('night-owl', nightOwl as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      monaco.editor.defineTheme('night-owl', nightOwl as any);
       setIsMonacoReady(true);
     });
   }, []);

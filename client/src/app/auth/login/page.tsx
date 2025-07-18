@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
 import api from '@/_services/api';
+import { AuthDomain } from '@/_domain/AuthDomain';
+import { useErrorHandler } from '@/_hooks/useErrorHandler';
 import {
   Card,
   CardContent,
@@ -28,24 +30,21 @@ import { useState, useEffect } from "react";
 const LoginPage = () => {
   const router = useRouter();
   const { toast } = useToast();
+  const { handleError } = useErrorHandler();
   const { setAccessToken, setUser, accessToken, user } = useAuth();
   const { isInitialized, isLoading: authLoading } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
 
-  // Get redirect path from URL params or sessionStorage
+  // Get redirect path using AuthDomain
   const getRedirectPath = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlRedirect = urlParams.get('redirect');
-    const sessionRedirect = sessionStorage.getItem('redirectAfterLogin');
     
-    const redirectPath = urlRedirect || sessionRedirect || '/';
-    
-    // Ensure we don't redirect to auth pages
-    if (redirectPath.startsWith('/auth/')) {
-      return '/';
+    if (urlRedirect) {
+      return urlRedirect.startsWith('/auth/') ? '/' : urlRedirect;
     }
     
-    return redirectPath;
+    return AuthDomain.getRedirectPath();
   };
 
   const loginSchema = z.object({
@@ -105,18 +104,12 @@ const LoginPage = () => {
 
       // Get redirect path and clean up
       const redirectPath = getRedirectPath();
-      sessionStorage.removeItem('redirectAfterLogin');
+      AuthDomain.clearRedirectPath();
       
       // Navigate to the redirect path
       router.push(redirectPath);
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message: string } }; message?: string };
-      toast({
-        title: 'Login Failed',
-        description:
-          err.response?.data?.message || err.message || 'An error occurred during login.',
-        variant: 'destructive',
-      });
+      handleError(error, 'Login');
     }
   };
 

@@ -1,4 +1,5 @@
 import api from './api';
+import { IProfileService } from '../_interfaces/IProfileService';
 
 export interface UserData {
   id: string;
@@ -26,7 +27,7 @@ export interface ProfileSubmission {
   memory: number;
 }
 
-export class ProfileService {
+export class ProfileService implements IProfileService {
   async getUserProfile(): Promise<UserData> {
     const response = await api.get("/auth/me");
     return response.data.data;

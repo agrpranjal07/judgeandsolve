@@ -1,5 +1,6 @@
 import api from './api';
 import { Problem } from './problem.service';
+import { IProblemsService } from '../_interfaces/IProblemsService';
 
 export interface ProblemsFilter {
   difficulty?: string;
@@ -13,7 +14,7 @@ export interface ProblemsResponse {
   totalPages: number;
 }
 
-export class ProblemsService {
+export class ProblemsService implements IProblemsService {
   async getProblems(filter: ProblemsFilter = {}): Promise<ProblemsResponse> {
     const { difficulty, page = 1, limit = 10 } = filter;
     

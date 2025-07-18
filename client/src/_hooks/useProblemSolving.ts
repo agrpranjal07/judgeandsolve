@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/_hooks/use-toast";
+import { useErrorHandler } from "@/_hooks/useErrorHandler";
 import useAuthStore from "@/_store/auth";
 import { 
   problemService, 
@@ -9,6 +10,7 @@ import {
   SubmissionResult, 
   PastSubmission 
 } from "@/_services/problem.service";
+import { ProblemSolvingDomain } from "@/_domain/ProblemSolvingDomain";
 
 export const useProblemSolving = (problemId: string) => {
   // State
@@ -34,6 +36,7 @@ export const useProblemSolving = (problemId: string) => {
 
   const accessToken = useAuthStore((state) => state.accessToken);
   const { toast } = useToast();
+  const { handleAsyncOperation } = useErrorHandler();
 
   // Clean up old saved codes on mount (cleanup utility)
   useEffect(() => {
@@ -224,6 +227,17 @@ export const useProblemSolving = (problemId: string) => {
   };
 
   const handleTest = async () => {
+    // Validate code before testing
+    const validation = ProblemSolvingDomain.validateCode(code, language);
+    if (!validation.isValid) {
+      toast({
+        title: "Validation Error",
+        description: validation.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(prev => ({ ...prev, test: true }));
     const allTestcases = [...sampleTestcases, ...customTestcases];
     const testcases = allTestcases.map((tc) => ({
@@ -231,23 +245,20 @@ export const useProblemSolving = (problemId: string) => {
       expectedOutput: tc.output,
     }));
 
-    try {
-      const results = await problemService.testCode({
+    const result = await handleAsyncOperation(
+      () => problemService.testCode({
         problemId,
         language,
         code,
         testcases,
-      });
-      setTestResults(results);
-    } catch (err) {
-      toast({ 
-        title: "Error", 
-        description: "Test run failed", 
-        variant: "destructive" 
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, test: false }));
+      }),
+      'Test Code'
+    );
+
+    if (result) {
+      setTestResults(result);
     }
+    setIsLoading(prev => ({ ...prev, test: false }));
   };
 
   const handleSubmit = async () => {
@@ -311,15 +322,17 @@ export const useProblemSolving = (problemId: string) => {
   };
 
   const handleReset = () => {
-    setCode("");
+    const defaultCode = ProblemSolvingDomain.getDefaultCode(language);
+    setCode(defaultCode);
     
-    // Also clear saved code from localStorage
-    try {
-      const saveCodeKey = `problemCode_${problemId}`;
-      localStorage.removeItem(saveCodeKey);
-    } catch (error) {
-      console.error("Error clearing saved code:", error);
-    }
+    // Also update saved code in localStorage
+    handleAsyncOperation(
+      async () => {
+        const saveCodeKey = `problemCode_${problemId}`;
+        localStorage.setItem(saveCodeKey, defaultCode);
+      },
+      'Reset Code'
+    );
   };
 
   return {
